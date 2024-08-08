@@ -46,6 +46,7 @@ public class SeedViewer {
 
     private boolean showSlimeChunks = true;
     private boolean showBiomeBorders = true;
+    private boolean showCrosshair = true;
     // Components
 
     private final JFrame mainFrame;
@@ -55,6 +56,7 @@ public class SeedViewer {
     private JLabel zoomLabel;
     private JCheckBox slimeChunksBox;
     private JCheckBox showBordersBox;
+    private JCheckBox showCrosshairBox;
     private JButton button;
 
     public SeedViewer(Properties properties) {
@@ -126,9 +128,13 @@ public class SeedViewer {
         showBordersBox = new JCheckBox("Chunk Borders");
         showBordersBox.setSelected(showBiomeBorders);
         showBordersBox.addChangeListener(e -> showBiomeBorders = showBordersBox.isSelected());
+        showCrosshairBox = new JCheckBox("Enable Cross-hair");
+        showCrosshairBox.setSelected(showCrosshair);
+        showCrosshairBox.addChangeListener(e -> showCrosshair = showCrosshairBox.isSelected());
 
         frame.add(slimeChunksBox);
         frame.add(showBordersBox);
+        frame.add(showCrosshairBox);
 
         button = new JButton("Random Seed");
         button.addActionListener(e -> {
@@ -165,8 +171,10 @@ public class SeedViewer {
         viewLabel.setBounds(lX, lY + lHeight * currLabel++, bWidth, lHeight);
         zoomLabel.setBounds(lX, lY + lHeight * currLabel++, bWidth, lHeight);
 
-        slimeChunksBox.setBounds(bezel, lY, 200, 15);
-        showBordersBox.setBounds(bezel, lY + 15, 200, 15);
+        int currBox = 0;
+        slimeChunksBox.setBounds(bezel, lY + 15 * currBox++, 200, 15);
+        showBordersBox.setBounds(bezel, lY + 15 * currBox++, 200, 15);
+        showCrosshairBox.setBounds(bezel, lY + 15 * currBox++, 200, 15);
 
         int imgWidth = screenWidth - (bezel * 2);
         int imgHeight = (screenHeight - bHeight - (bezel * 2));
@@ -213,6 +221,15 @@ public class SeedViewer {
                     subImgHeight
                 );
             }
+        }
+        if (showCrosshair) {
+            int centX = biomeImage.getWidth()/2;
+            int centZ = biomeImage.getHeight()/2;
+            int lineReach = 10;
+            int lineWidth = 2;
+            g.setXORMode(Color.WHITE);
+            g.fillRect(centX - lineReach, centZ - lineWidth/2, lineReach * 2, lineWidth);
+            g.fillRect(centX - lineWidth/2, centZ - lineReach, lineWidth, lineReach * 2);
         }
         g.dispose();
         imageFrame.repaint();
