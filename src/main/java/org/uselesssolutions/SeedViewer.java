@@ -2,6 +2,7 @@ package org.uselesssolutions;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.uselesssolutions.bta.BTAChunkProvider;
 import org.uselesssolutions.collections.ChunkLocation;
 import org.uselesssolutions.components.ViewportComponent;
 import org.uselesssolutions.data.Chunk;
@@ -32,7 +33,7 @@ public class SeedViewer {
     private BufferedImage biomeImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
 
     // Configuration
-    protected ChunkProvider chunkProvider = new TestChunkProvider();
+    protected ChunkProvider chunkProvider;
     protected ObjectWrapper<@NotNull Long> seed = new ObjectWrapper<>(100L);
 
     // User State
@@ -56,6 +57,9 @@ public class SeedViewer {
         try {
             seed.set(Long.parseLong(properties.getProperty("seed", "10000")));
         } catch (NumberFormatException ignored){}
+
+        chunkProvider = new BTAChunkProvider(seed.get());
+        seed.addChangeListener(newValue -> chunkProvider = new BTAChunkProvider(newValue));
 
         initComponents(null);
 
@@ -171,7 +175,7 @@ public class SeedViewer {
                 Color.BLACK,
                 null);
             if (isSlimeChunk(seed.get(), view.getLocation())) {
-                g.setColor(new Color(64, 255, 120, 64));
+                g.setColor(new Color(64, 255, 120, 128));
                 g.fillRect(
                     subImgX,
                     subImgZ,
