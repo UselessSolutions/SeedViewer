@@ -3,23 +3,61 @@ package org.uselesssolutions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.uselesssolutions.collections.ChunkLocation;
+import org.uselesssolutions.data.Chunk;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 
 public class SeedViewer {
     public final Properties launchProperties;
+
+    private final Map<ChunkLocation, ChunkView> chunkViewMap = new HashMap<>();
+    private BufferedImage biomeImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+
+    private float zoom = 4f;
+    private int viewX = 0;
+    private int viewZ = 0;
+
     private final JFrame mainFrame;
     private JLabel imageFrame;
     private JButton button;
+
     public SeedViewer(Properties properties) {
         this.launchProperties = properties;
         mainFrame = createFrame();
         initComponents(null);
+
+
+        for (int x = -16; x < 16; x++) {
+            for (int z = -16; z < 16; z++) {
+                addChunkView(new ChunkLocation(x, z));
+            }
+        }
+
+        new Thread(
+            () -> {
+                while (true) {
+                    try {
+                        updateImage();
+                        imageFrame.setIcon(new ImageIcon(biomeImage));
+                    } catch (Exception e){
+                        e.printStackTrace();
+                    }
+
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                    }
+                }
+            }
+        ).start();
     }
 
     public @NotNull JFrame createFrame() {
@@ -28,7 +66,11 @@ public class SeedViewer {
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         // Creating instance of JButton
-        button = new JButton(" GFG WebSite Click");
+        button = new JButton("Random Seed");
+        button.addActionListener(e -> {
+            launchProperties.setProperty("seed", String.valueOf(new Random().nextLong()));
+            initComponents(null);
+        });
 
         imageFrame = new JLabel();
 
@@ -55,22 +97,53 @@ public class SeedViewer {
         int screenHeight = mainFrame.getContentPane().getHeight();
 
         int bWidth = (int) (screenWidth * 0.5f);
-        int bHeight = (int) (screenHeight * 0.2f);
-        button.setBounds((screenWidth - bWidth)/2, screenHeight - bHeight, bWidth, bHeight);
+        int bHeight = (int) (screenHeight * 0.05f);
+        button.setBounds((screenWidth - bWidth)/2, screenHeight - bHeight - 15, bWidth, bHeight);
 
         int imgWidth = screenWidth - (30 * 2);
         int imgHeight = (screenHeight - bHeight - (30 * 2));
 
-        int scale = 8;
+        biomeImage = new BufferedImage(imgWidth, imgHeight, BufferedImage.TYPE_INT_ARGB);
 
-        BufferedImage image = new BufferedImage(imgWidth, imgHeight, BufferedImage.TYPE_INT_ARGB);
-        for (int x = 0; x < image.getWidth(); x++) {
-            for (int y = 0; y < image.getHeight(); y++) {
-                image.setRGB(x, y, (((x/scale) % 2 == 0) && ((y/scale) % 2 == 0)) ? 0xFF000000 : 0xFFCCCCCC);
-            }
-        }
-        imageFrame.setIcon(new ImageIcon(image));
         imageFrame.setBounds(30, 30, imgWidth, imgHeight);
+        imageFrame.setIcon(new ImageIcon(biomeImage));
+    }
+
+    public void updateImage() {
+        for (ChunkView view : chunkViewMap.values()) {
+            int blockX = view.getLocation().x * Chunk.CHUNK_SIZE_X;
+            int blockZ = view.getLocation().z * Chunk.CHUNK_SIZE_Z;
+
+            int subImgX = (int) Math.floor((blockX + viewX) * zoom);
+            int subImgZ = (int) Math.floor((blockZ + viewZ) * zoom);
+            int subImgWidth = (int) Math.floor(Chunk.CHUNK_SIZE_X * zoom);
+            int subImgHeight = (int) Math.floor(Chunk.CHUNK_SIZE_Z * zoom);
+            Graphics g = biomeImage.getGraphics();
+            g.drawImage(view.getBiomeMapImage(),
+                subImgX,
+                subImgZ,
+                subImgWidth,
+                subImgHeight,
+                Color.BLACK,
+                null);
+            if (isSlimeChunk(Long.parseLong(launchProperties.getProperty("seed", "100")), view.getLocation())) {
+                g.setColor(new Color(64, 255, 120, 128));
+                g.fillRect(
+                    subImgX,
+                    subImgZ,
+                    subImgWidth,
+                    subImgHeight);
+            }
+            g.dispose();
+        }
+    }
+
+    public void addChunkView(ChunkLocation location) {
+        chunkViewMap.put(location, new ChunkView(location, location1 -> null));
+    }
+
+    public void removeChunkView(ChunkLocation location) {
+        chunkViewMap.remove(location);
     }
 
     public static boolean isSlimeChunk(long worldSeed, @NotNull ChunkLocation location) {

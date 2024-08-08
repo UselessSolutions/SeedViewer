@@ -3,25 +3,22 @@ package org.uselesssolutions.collections;
 import java.util.Objects;
 
 /**
- * Block coordinates of a position relative to a chunk
+ * Block coordinates of a position relative to the world
  */
-public class ChunkPos {
-    public final int x;
+public final class BlockPos3D extends BlockPos2D {
     public final int y;
-    public final int z;
 
-    public ChunkPos(int x, int y, int z) {
-        this.x = x;
+    public BlockPos3D(int x, int y, int z) {
+        super(x, z);
         this.y = y;
-        this.z = z;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ChunkPos chunkPos = (ChunkPos) o;
-        return x == chunkPos.x && y == chunkPos.y && z == chunkPos.z;
+        BlockPos3D blockPos3D = (BlockPos3D) o;
+        return x == blockPos3D.x && y == blockPos3D.y && z == blockPos3D.z;
     }
 
     @Override
@@ -31,7 +28,7 @@ public class ChunkPos {
 
     @Override
     public String toString() {
-        return "ChunkPos{" +
+        return "BlockPos3D{" +
             "x=" + x +
             ", y=" + y +
             ", z=" + z +

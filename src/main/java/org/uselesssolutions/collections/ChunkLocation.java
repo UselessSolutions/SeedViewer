@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * Chunk coordinates of a chunk in the world
  */
-public class ChunkLocation {
+public final class ChunkLocation {
     public final int x;
     public final int z;
 
