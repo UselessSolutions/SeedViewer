@@ -3,9 +3,11 @@ package org.uselesssolutions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.uselesssolutions.collections.ChunkLocation;
+import org.uselesssolutions.components.ViewportComponent;
 import org.uselesssolutions.data.Chunk;
 
 import javax.swing.*;
+import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -16,14 +18,19 @@ import java.util.Properties;
 import java.util.Random;
 
 public class SeedViewer {
+    public static final int TICKS_PER_SECOND = 10;
+    public static final float ZOOM_SENSITIVITY = 0.25f;
     public final Properties launchProperties;
 
     private final Map<ChunkLocation, ChunkView> chunkViewMap = new HashMap<>();
     private BufferedImage biomeImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
 
-    private float zoom = 4f;
-    private int viewX = 0;
-    private int viewZ = 0;
+    private static final float ZOOM_MIN = 1f;
+    private static final float ZOOM_MAX = 8f;
+    private float zoom = 1f;
+
+    private float viewX = 0;
+    private float viewZ = 0;
 
     private final JFrame mainFrame;
     private JLabel imageFrame;
@@ -34,25 +41,17 @@ public class SeedViewer {
         mainFrame = createFrame();
         initComponents(null);
 
-
-        for (int x = -16; x < 16; x++) {
-            for (int z = -16; z < 16; z++) {
-                addChunkView(new ChunkLocation(x, z));
-            }
-        }
-
         new Thread(
             () -> {
                 while (true) {
                     try {
-                        updateImage();
-                        imageFrame.setIcon(new ImageIcon(biomeImage));
+                        tick();
                     } catch (Exception e){
                         e.printStackTrace();
                     }
 
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(1000/TICKS_PER_SECOND);
                     } catch (InterruptedException e) {
                     }
                 }
@@ -64,6 +63,7 @@ public class SeedViewer {
         // Creating instance of JFrame
         JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        frame.setTitle("BTA Seed Viewer!");
 
         // Creating instance of JButton
         button = new JButton("Random Seed");
@@ -72,7 +72,9 @@ public class SeedViewer {
             initComponents(null);
         });
 
-        imageFrame = new JLabel();
+        imageFrame = new ViewportComponent(this);
+        imageFrame.setBorder(new LineBorder(Color.DARK_GRAY, 3, true));
+        imageFrame.setFocusable(true);
 
         // adding button in JFrame
         frame.add(button);
@@ -110,15 +112,17 @@ public class SeedViewer {
     }
 
     public void updateImage() {
+        Graphics g = biomeImage.getGraphics();
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, biomeImage.getWidth(), biomeImage.getHeight());
         for (ChunkView view : chunkViewMap.values()) {
             int blockX = view.getLocation().x * Chunk.CHUNK_SIZE_X;
             int blockZ = view.getLocation().z * Chunk.CHUNK_SIZE_Z;
 
-            int subImgX = (int) Math.floor((blockX + viewX) * zoom);
-            int subImgZ = (int) Math.floor((blockZ + viewZ) * zoom);
+            int subImgX = (int) Math.floor((blockX + viewX) * zoom + biomeImage.getWidth()/2d);
+            int subImgZ = (int) Math.floor((blockZ + viewZ) * zoom + biomeImage.getHeight()/2d);
             int subImgWidth = (int) Math.floor(Chunk.CHUNK_SIZE_X * zoom);
             int subImgHeight = (int) Math.floor(Chunk.CHUNK_SIZE_Z * zoom);
-            Graphics g = biomeImage.getGraphics();
             g.drawImage(view.getBiomeMapImage(),
                 subImgX,
                 subImgZ,
@@ -134,8 +138,37 @@ public class SeedViewer {
                     subImgWidth,
                     subImgHeight);
             }
-            g.dispose();
         }
+        g.dispose();
+        imageFrame.setIcon(new ImageIcon(biomeImage));
+    }
+
+    public void tick() {
+        ChunkLocation topLeftLocation = new ChunkLocation((int) ((viewX - biomeImage.getWidth()/2d)/Chunk.CHUNK_SIZE_X), (int) ((viewZ - biomeImage.getHeight()/2d)/Chunk.CHUNK_SIZE_Z));
+
+        int chunksX = (int) Math.ceil((double) biomeImage.getWidth()/Chunk.CHUNK_SIZE_X);
+        int chunksZ = (int) Math.ceil((double) biomeImage.getHeight()/Chunk.CHUNK_SIZE_Z);
+        for (int _x = topLeftLocation.x; _x < topLeftLocation.x + chunksX; _x++) {
+            for (int _z = topLeftLocation.z; _z < topLeftLocation.z + chunksZ; _z++) {
+                ChunkLocation location = new ChunkLocation(_x, _z);
+                if (chunkViewMap.containsKey(location)) continue;
+                addChunkView(location);
+            }
+        }
+        updateImage();
+    }
+
+    public void offsetZoom(float delta) {
+        zoom += delta;
+        if (zoom < ZOOM_MIN) zoom = ZOOM_MIN;
+        if (zoom > ZOOM_MAX) zoom = ZOOM_MAX;
+        updateImage();
+    }
+
+    public void offsetView(float deltaX, float deltaZ) {
+        viewX += (deltaX / zoom);
+        viewZ += (deltaZ / zoom);
+        updateImage();
     }
 
     public void addChunkView(ChunkLocation location) {
