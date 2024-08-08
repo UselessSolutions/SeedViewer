@@ -13,32 +13,49 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
+import java.util.Set;
 
 public class SeedViewer {
+    // Static Configuration
     public static final int TICKS_PER_SECOND = 10;
     public static final float ZOOM_SENSITIVITY = 0.25f;
-    public final Properties launchProperties;
+    private static final float ZOOM_MIN = 1f;
+    private static final float ZOOM_MAX = 8f;
 
+    // Storage
+    public final Properties launchProperties;
     private final Map<ChunkLocation, ChunkView> chunkViewMap = new HashMap<>();
     private BufferedImage biomeImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
 
-    private static final float ZOOM_MIN = 1f;
-    private static final float ZOOM_MAX = 8f;
-    private float zoom = 1f;
+    // Configuration
+    protected ObjectWrapper<@NotNull Long> seed = new ObjectWrapper<>(100L);
 
-    private float viewX = 0;
-    private float viewZ = 0;
+    // User State
+    protected ObjectWrapper<@NotNull Float> zoom = new ObjectWrapper<>(1F);
+
+    protected ObjectWrapper<@NotNull Float> viewX = new ObjectWrapper<>(0F);
+    protected ObjectWrapper<@NotNull Float> viewZ = new ObjectWrapper<>(0F);
+
+    // Components
 
     private final JFrame mainFrame;
     private JLabel imageFrame;
+    private JLabel seedLabel;
+    private JLabel viewLabel;
+    private JLabel zoomLabel;
     private JButton button;
 
     public SeedViewer(Properties properties) {
         this.launchProperties = properties;
         mainFrame = createFrame();
+        try {
+            seed.set(Long.parseLong(properties.getProperty("seed", "10000")));
+        } catch (NumberFormatException ignored){}
+
         initComponents(null);
 
         new Thread(
@@ -64,32 +81,45 @@ public class SeedViewer {
         JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.setTitle("BTA Seed Viewer!");
-
-        // Creating instance of JButton
-        button = new JButton("Random Seed");
-        button.addActionListener(e -> {
-            launchProperties.setProperty("seed", String.valueOf(new Random().nextLong()));
-            initComponents(null);
-        });
-
-        imageFrame = new ViewportComponent(this);
-        imageFrame.setBorder(new LineBorder(Color.DARK_GRAY, 3, true));
-        imageFrame.setFocusable(true);
-
-        // adding button in JFrame
-        frame.add(button);
-        frame.add(imageFrame);
         frame.setSize(960, 720);
-
         frame.setResizable(true);
         frame.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
                 initComponents(e);
+                updateImage();
             }
         }); // Register `initComponents` to run when frame is resized
         frame.setLayout(null); // using no layout managers
         frame.setVisible(true); // making the frame visible
+
+        // State labels
+        seedLabel = new JLabel("Seed: " + seed);
+        seed.addChangeListener(newValue -> seedLabel.setText("Seed: " + seed));
+
+        viewLabel = new JLabel(String.format("View: X:%s, Z:%s", viewX, viewZ));
+        viewX.addChangeListener(newValue -> viewLabel.setText(String.format("View: X:%.2f, Z:%.2f", viewX.get(), viewZ.get())));
+        viewZ.addChangeListener(newValue -> viewLabel.setText(String.format("View: X:%.2f, Z:%.2f", viewX.get(), viewZ.get())));
+
+        zoomLabel = new JLabel("Zoom: " + zoom);
+        zoom.addChangeListener(newValue -> zoomLabel.setText("Zoom: " + zoom));
+
+        frame.add(seedLabel);
+        frame.add(viewLabel);
+        frame.add(zoomLabel);
+
+        button = new JButton("Random Seed");
+        button.addActionListener(e -> {
+            seed.set(new Random().nextLong());
+            chunkViewMap.clear();
+            initComponents(null);
+        });
+        frame.add(button);
+
+        imageFrame = new ViewportComponent(this);
+        imageFrame.setBorder(new LineBorder(Color.DARK_GRAY, 3, true));
+        imageFrame.setFocusable(true);
+        frame.add(imageFrame);
 
         return frame;
     }
@@ -102,6 +132,15 @@ public class SeedViewer {
         int bHeight = (int) (screenHeight * 0.05f);
         button.setBounds((screenWidth - bWidth)/2, screenHeight - bHeight - 15, bWidth, bHeight);
 
+        int labels = 3;
+        int currLabel = 0;
+        int lX = (screenWidth + bWidth)/2 + 20;
+        int lY = screenHeight - bHeight - 15;
+        int lHeight = bHeight/labels;
+        seedLabel.setBounds(lX, lY + lHeight * currLabel++, bWidth, lHeight);
+        viewLabel.setBounds(lX, lY + lHeight * currLabel++, bWidth, lHeight);
+        zoomLabel.setBounds(lX, lY + lHeight * currLabel++, bWidth, lHeight);
+
         int imgWidth = screenWidth - (30 * 2);
         int imgHeight = (screenHeight - bHeight - (30 * 2));
 
@@ -111,7 +150,7 @@ public class SeedViewer {
         imageFrame.setIcon(new ImageIcon(biomeImage));
     }
 
-    public void updateImage() {
+    public synchronized void updateImage() {
         Graphics g = biomeImage.getGraphics();
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, biomeImage.getWidth(), biomeImage.getHeight());
@@ -119,10 +158,10 @@ public class SeedViewer {
             int blockX = view.getLocation().x * Chunk.CHUNK_SIZE_X;
             int blockZ = view.getLocation().z * Chunk.CHUNK_SIZE_Z;
 
-            int subImgX = (int) Math.floor((blockX + viewX) * zoom + biomeImage.getWidth()/2d);
-            int subImgZ = (int) Math.floor((blockZ + viewZ) * zoom + biomeImage.getHeight()/2d);
-            int subImgWidth = (int) Math.floor(Chunk.CHUNK_SIZE_X * zoom);
-            int subImgHeight = (int) Math.floor(Chunk.CHUNK_SIZE_Z * zoom);
+            int subImgX = (int) Math.floor((blockX + viewX.get()) * zoom.get() + biomeImage.getWidth()/2d);
+            int subImgZ = (int) Math.floor((blockZ + viewZ.get()) * zoom.get() + biomeImage.getHeight()/2d);
+            int subImgWidth = (int) Math.floor(Chunk.CHUNK_SIZE_X * zoom.get());
+            int subImgHeight = (int) Math.floor(Chunk.CHUNK_SIZE_Z * zoom.get());
             g.drawImage(view.getBiomeMapImage(),
                 subImgX,
                 subImgZ,
@@ -130,7 +169,7 @@ public class SeedViewer {
                 subImgHeight,
                 Color.BLACK,
                 null);
-            if (isSlimeChunk(Long.parseLong(launchProperties.getProperty("seed", "100")), view.getLocation())) {
+            if (isSlimeChunk(seed.get(), view.getLocation())) {
                 g.setColor(new Color(64, 255, 120, 128));
                 g.fillRect(
                     subImgX,
@@ -143,39 +182,56 @@ public class SeedViewer {
         imageFrame.setIcon(new ImageIcon(biomeImage));
     }
 
-    public void tick() {
-        ChunkLocation topLeftLocation = new ChunkLocation((int) ((viewX - biomeImage.getWidth()/2d)/Chunk.CHUNK_SIZE_X), (int) ((viewZ - biomeImage.getHeight()/2d)/Chunk.CHUNK_SIZE_Z));
+    public synchronized void tick() {
+        final byte OVER_SCAN = 2;
+        ChunkLocation topLeftLocation =
+            new ChunkLocation(
+                (int) ((-viewX.get() - (biomeImage.getWidth()/(zoom.get() * 2)))/Chunk.CHUNK_SIZE_X) - OVER_SCAN,
+                (int) ((-viewZ.get() - (biomeImage.getHeight()/(zoom.get() * 2)))/Chunk.CHUNK_SIZE_Z) - OVER_SCAN);
+        int chunksX = (int) Math.ceil(biomeImage.getWidth()/(Chunk.CHUNK_SIZE_X * zoom.get())) + (OVER_SCAN * 2);
+        int chunksZ = (int) Math.ceil(biomeImage.getHeight()/(Chunk.CHUNK_SIZE_Z * zoom.get())) + (OVER_SCAN * 2);
 
-        int chunksX = (int) Math.ceil((double) biomeImage.getWidth()/Chunk.CHUNK_SIZE_X);
-        int chunksZ = (int) Math.ceil((double) biomeImage.getHeight()/Chunk.CHUNK_SIZE_Z);
+        Set<ChunkLocation> offScreenLocations = new HashSet<>(chunkViewMap.keySet());
         for (int _x = topLeftLocation.x; _x < topLeftLocation.x + chunksX; _x++) {
             for (int _z = topLeftLocation.z; _z < topLeftLocation.z + chunksZ; _z++) {
                 ChunkLocation location = new ChunkLocation(_x, _z);
+                offScreenLocations.remove(location);
                 if (chunkViewMap.containsKey(location)) continue;
                 addChunkView(location);
             }
         }
+        for (ChunkLocation location : offScreenLocations) {
+            removeChunkView(location);
+        }
         updateImage();
     }
 
-    public void offsetZoom(float delta) {
-        zoom += delta;
-        if (zoom < ZOOM_MIN) zoom = ZOOM_MIN;
-        if (zoom > ZOOM_MAX) zoom = ZOOM_MAX;
+    public synchronized void offsetZoom(float delta) {
+        setZoom(zoom.get() + delta);
+    }
+
+    public synchronized void setZoom(float newZoom) {
+        if (newZoom < ZOOM_MIN) newZoom = ZOOM_MIN;
+        if (newZoom > ZOOM_MAX) newZoom = ZOOM_MAX;
+        zoom.set(newZoom);
         updateImage();
     }
 
-    public void offsetView(float deltaX, float deltaZ) {
-        viewX += (deltaX / zoom);
-        viewZ += (deltaZ / zoom);
+    public synchronized void offsetView(float deltaX, float deltaZ) {
+        setOffsetView(viewX.get() + (deltaX / zoom.get()), viewZ.get() + (deltaZ / zoom.get()));
+    }
+
+    public synchronized void setOffsetView(float newX, float newZ) {
+        viewX.set(newX);
+        viewZ.set(newZ);
         updateImage();
     }
 
-    public void addChunkView(ChunkLocation location) {
+    public synchronized void addChunkView(ChunkLocation location) {
         chunkViewMap.put(location, new ChunkView(location, location1 -> null));
     }
 
-    public void removeChunkView(ChunkLocation location) {
+    public synchronized void removeChunkView(ChunkLocation location) {
         chunkViewMap.remove(location);
     }
 
