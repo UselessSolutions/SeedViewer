@@ -43,6 +43,7 @@ public class ObjectWrapper<T> {
     }
 
     public ObjectWrapper<T> addChangeListener(@NotNull ValueListener<T> listener) {
+        Objects.requireNonNull(listener);
         listeners.add(listener);
         return this;
     }

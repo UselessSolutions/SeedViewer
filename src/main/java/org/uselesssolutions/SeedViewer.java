@@ -32,6 +32,7 @@ public class SeedViewer {
     private BufferedImage biomeImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
 
     // Configuration
+    protected ChunkProvider chunkProvider = new TestChunkProvider();
     protected ObjectWrapper<@NotNull Long> seed = new ObjectWrapper<>(100L);
 
     // User State
@@ -170,16 +171,23 @@ public class SeedViewer {
                 Color.BLACK,
                 null);
             if (isSlimeChunk(seed.get(), view.getLocation())) {
-                g.setColor(new Color(64, 255, 120, 128));
+                g.setColor(new Color(64, 255, 120, 64));
                 g.fillRect(
                     subImgX,
                     subImgZ,
                     subImgWidth,
                     subImgHeight);
             }
+            g.setColor(Color.BLACK);
+            g.drawRect(
+                subImgX,
+                subImgZ,
+                subImgWidth,
+                subImgHeight
+            );
         }
         g.dispose();
-        imageFrame.setIcon(new ImageIcon(biomeImage));
+        imageFrame.repaint();
     }
 
     public synchronized void tick() {
@@ -228,7 +236,7 @@ public class SeedViewer {
     }
 
     public synchronized void addChunkView(ChunkLocation location) {
-        chunkViewMap.put(location, new ChunkView(location, location1 -> null));
+        chunkViewMap.put(location, new ChunkView(location, chunkProvider));
     }
 
     public synchronized void removeChunkView(ChunkLocation location) {
