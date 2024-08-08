@@ -9,6 +9,8 @@ import org.uselesssolutions.data.Chunk;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -42,6 +44,8 @@ public class SeedViewer {
     protected ObjectWrapper<@NotNull Float> viewX = new ObjectWrapper<>(0F);
     protected ObjectWrapper<@NotNull Float> viewZ = new ObjectWrapper<>(0F);
 
+    private boolean showSlimeChunks = true;
+    private boolean showBiomeBorders = true;
     // Components
 
     private final JFrame mainFrame;
@@ -49,6 +53,8 @@ public class SeedViewer {
     private JLabel seedLabel;
     private JLabel viewLabel;
     private JLabel zoomLabel;
+    private JCheckBox slimeChunksBox;
+    private JCheckBox showBordersBox;
     private JButton button;
 
     public SeedViewer(Properties properties) {
@@ -113,6 +119,17 @@ public class SeedViewer {
         frame.add(viewLabel);
         frame.add(zoomLabel);
 
+        // Checkboxes
+        slimeChunksBox = new JCheckBox("Slime Chunks");
+        slimeChunksBox.setSelected(showSlimeChunks);
+        slimeChunksBox.addChangeListener(e -> showSlimeChunks = slimeChunksBox.isSelected());
+        showBordersBox = new JCheckBox("Chunk Borders");
+        showBordersBox.setSelected(showBiomeBorders);
+        showBordersBox.addChangeListener(e -> showBiomeBorders = showBordersBox.isSelected());
+
+        frame.add(slimeChunksBox);
+        frame.add(showBordersBox);
+
         button = new JButton("Random Seed");
         button.addActionListener(e -> {
             seed.set(new Random().nextLong());
@@ -133,6 +150,8 @@ public class SeedViewer {
         int screenWidth = mainFrame.getContentPane().getWidth();
         int screenHeight = mainFrame.getContentPane().getHeight();
 
+        int bezel = 30;
+
         int bWidth = (int) (screenWidth * 0.5f);
         int bHeight = (int) (screenHeight * 0.05f);
         button.setBounds((screenWidth - bWidth)/2, screenHeight - bHeight - 15, bWidth, bHeight);
@@ -140,18 +159,21 @@ public class SeedViewer {
         int labels = 3;
         int currLabel = 0;
         int lX = (screenWidth + bWidth)/2 + 20;
-        int lY = screenHeight - bHeight - 15;
-        int lHeight = bHeight/labels;
+        int lY = screenHeight - bHeight - bezel;
+        int lHeight = (bHeight + bezel)/labels;
         seedLabel.setBounds(lX, lY + lHeight * currLabel++, bWidth, lHeight);
         viewLabel.setBounds(lX, lY + lHeight * currLabel++, bWidth, lHeight);
         zoomLabel.setBounds(lX, lY + lHeight * currLabel++, bWidth, lHeight);
 
-        int imgWidth = screenWidth - (30 * 2);
-        int imgHeight = (screenHeight - bHeight - (30 * 2));
+        slimeChunksBox.setBounds(bezel, lY, 200, 15);
+        showBordersBox.setBounds(bezel, lY + 15, 200, 15);
+
+        int imgWidth = screenWidth - (bezel * 2);
+        int imgHeight = (screenHeight - bHeight - (bezel * 2));
 
         biomeImage = new BufferedImage(imgWidth, imgHeight, BufferedImage.TYPE_INT_ARGB);
 
-        imageFrame.setBounds(30, 30, imgWidth, imgHeight);
+        imageFrame.setBounds(bezel, bezel, imgWidth, imgHeight);
         imageFrame.setIcon(new ImageIcon(biomeImage));
     }
 
@@ -174,7 +196,7 @@ public class SeedViewer {
                 subImgHeight,
                 Color.BLACK,
                 null);
-            if (isSlimeChunk(seed.get(), view.getLocation())) {
+            if (showSlimeChunks && isSlimeChunk(seed.get(), view.getLocation())) {
                 g.setColor(new Color(64, 255, 120, 128));
                 g.fillRect(
                     subImgX,
@@ -182,13 +204,15 @@ public class SeedViewer {
                     subImgWidth,
                     subImgHeight);
             }
-            g.setColor(Color.BLACK);
-            g.drawRect(
-                subImgX,
-                subImgZ,
-                subImgWidth,
-                subImgHeight
-            );
+            if (showBiomeBorders) {
+                g.setColor(Color.BLACK);
+                g.drawRect(
+                    subImgX,
+                    subImgZ,
+                    subImgWidth,
+                    subImgHeight
+                );
+            }
         }
         g.dispose();
         imageFrame.repaint();
