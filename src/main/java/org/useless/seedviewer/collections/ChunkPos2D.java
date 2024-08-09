@@ -1,6 +1,6 @@
-package org.useless.collections;
+package org.useless.seedviewer.collections;
 
-import org.useless.data.Chunk;
+import org.useless.seedviewer.data.Chunk;
 
 import java.util.Objects;
 

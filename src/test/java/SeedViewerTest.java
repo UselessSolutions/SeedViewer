@@ -1,8 +1,8 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.useless.SeedViewer;
-import org.useless.collections.ChunkLocation;
+import org.useless.seedviewer.gui.SeedViewer;
+import org.useless.seedviewer.collections.ChunkLocation;
 
 public class SeedViewerTest {
 

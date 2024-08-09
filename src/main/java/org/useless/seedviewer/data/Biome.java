@@ -1,6 +1,6 @@
-package org.useless.data;
+package org.useless.seedviewer.data;
 
-import org.useless.collections.NamespaceID;
+import org.useless.seedviewer.collections.NamespaceID;
 
 public interface Biome {
     String getName();

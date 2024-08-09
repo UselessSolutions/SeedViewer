@@ -1,11 +1,11 @@
-package org.useless.bta;
+package org.useless.seedviewer.bta;
 
 import net.minecraft.core.world.biome.provider.BiomeProvider;
-import org.useless.collections.ChunkLocation;
-import org.useless.collections.ChunkPos2D;
-import org.useless.collections.ChunkPos3D;
-import org.useless.data.Biome;
-import org.useless.data.Chunk;
+import org.useless.seedviewer.collections.ChunkLocation;
+import org.useless.seedviewer.collections.ChunkPos2D;
+import org.useless.seedviewer.collections.ChunkPos3D;
+import org.useless.seedviewer.data.Biome;
+import org.useless.seedviewer.data.Chunk;
 
 public class BTAChunk implements Chunk {
     private final ChunkLocation location;

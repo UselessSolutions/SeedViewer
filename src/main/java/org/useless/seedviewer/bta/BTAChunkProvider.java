@@ -1,4 +1,4 @@
-package org.useless.bta;
+package org.useless.seedviewer.bta;
 
 import net.minecraft.core.Global;
 import net.minecraft.core.block.Block;
@@ -9,9 +9,9 @@ import net.minecraft.core.world.biome.Biomes;
 import net.minecraft.core.world.biome.provider.BiomeProvider;
 import net.minecraft.core.world.biome.provider.BiomeProviderOverworld;
 import net.minecraft.core.world.type.WorldTypes;
-import org.useless.ChunkProvider;
-import org.useless.collections.ChunkLocation;
-import org.useless.data.Chunk;
+import org.useless.seedviewer.gui.ChunkProvider;
+import org.useless.seedviewer.collections.ChunkLocation;
+import org.useless.seedviewer.data.Chunk;
 
 public class BTAChunkProvider implements ChunkProvider {
     static {
