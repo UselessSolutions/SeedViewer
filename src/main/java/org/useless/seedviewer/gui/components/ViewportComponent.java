@@ -1,6 +1,6 @@
-package org.useless.components;
+package org.useless.seedviewer.gui.components;
 
-import org.useless.SeedViewer;
+import org.useless.seedviewer.gui.SeedViewer;
 
 import javax.swing.*;
 import java.awt.*;

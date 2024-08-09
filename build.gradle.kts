@@ -20,6 +20,15 @@ dependencies {
 
     implementation(files("lib/bta-7.2_01-client.jar"))
 
+    val log4jVersion = "2.20.0"
+    implementation("org.apache.logging.log4j:log4j-core:${log4jVersion}")
+    implementation("org.apache.logging.log4j:log4j-api:${log4jVersion}")
+    implementation("org.apache.logging.log4j:log4j-1.2-api:${log4jVersion}")
+    implementation("org.apache.logging.log4j:log4j-slf4j2-impl:${log4jVersion}")
+    implementation("log4j:apache-log4j-extras:1.2.17")
+
+    annotationProcessor("org.apache.logging.log4j:log4j-core:${log4jVersion}")
+
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 
@@ -36,7 +45,7 @@ task("jarViewer", ShadowJar::class) {
     from(sourceSets["main"].resources)
     archiveFileName.set("SeedViewer-$version.jar")
     manifest {
-        attributes["Main-Class"] = "org.useless.Main"
+        attributes["Main-Class"] = "org.useless.seedviewer.Main"
         attributes["Class-Path"] = "libraries/bta-7.2_01-client.jar"
         attributes["Implementation-Version"] = version
     }
