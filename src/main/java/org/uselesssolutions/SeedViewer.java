@@ -65,10 +65,11 @@ public class SeedViewer {
 
     public SeedViewer(Properties properties) {
         this.launchProperties = properties;
-        mainFrame = createFrame();
         try {
-            seed.set(Long.parseLong(properties.getProperty("seed", "10000")));
+            seed.set(Long.parseLong(properties.getProperty("seed", "100")));
         } catch (NumberFormatException ignored){}
+
+        mainFrame = createFrame();
 
         chunkProvider = new BTAChunkProvider(seed.get());
         seed.addChangeListener(newValue -> chunkProvider = new BTAChunkProvider(newValue));
