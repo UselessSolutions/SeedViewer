@@ -31,7 +31,7 @@ dependencies {
 
     annotationProcessor("org.apache.logging.log4j:log4j-core:${log4jVersion}")?.let { jarIncludes(it) }
 
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
+    testImplementation(platform("org.junit:junit-bom:5.10.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 
 }
@@ -41,6 +41,7 @@ tasks.test {
 }
 
 task("jarViewer", ShadowJar::class) {
+    dependsOn(tasks["test"])
     group = "useless"
     configurations = listOf(jarIncludes)
 
