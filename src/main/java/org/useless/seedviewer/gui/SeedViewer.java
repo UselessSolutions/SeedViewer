@@ -28,7 +28,7 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 
-public class SeedViewer {
+public class SeedViewer extends JFrame {
     // Static Configuration
     public static final int TICKS_PER_SECOND = 10;
     public static final float ZOOM_SENSITIVITY = 0.125f;
@@ -55,7 +55,6 @@ public class SeedViewer {
     private boolean showCrosshair = true;
 
     // Components
-    private final JFrame mainFrame;
     private JLabel imageFrame;
     private JLabel seedLabel;
     private JLabel viewLabel;
@@ -77,7 +76,9 @@ public class SeedViewer {
             seed.set((long) properties.getProperty("seed", "100").hashCode());
         }
 
-        mainFrame = createFrame();
+        initFrame();
+        addComponents();
+
         initComponents(null);
 
         chunkProvider = new BTAChunkProvider(seed.get());
@@ -102,42 +103,41 @@ public class SeedViewer {
         ).start();
     }
 
-    public @NotNull JFrame createFrame() {
-        try {
-            UIManager.setLookAndFeel( new FlatDarculaLaf() );
-        } catch( Exception ex ) {
-            Global.LOGGER.error("Failed to initialize LaF theme!", ex);
-        }
-
+    public void initFrame() {
         // Creating instance of JFrame
         Global.LOGGER.info("Initializing Frame");
-        JFrame frame = new JFrame();
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setTitle("BTA Seed Viewer!");
-        frame.setSize(960, 720);
-        frame.setMinimumSize(new Dimension(480, 360));
-        frame.setResizable(true);
-        frame.addComponentListener(new ComponentAdapter() {
+        this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        this.setTitle("BTA Seed Viewer!");
+        this.setSize(960, 720);
+        this.setMinimumSize(new Dimension(480, 360));
+        this.setResizable(true);
+        this.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
                 initComponents(e);
                 updateImage();
             }
         }); // Register `initComponents` to run when frame is resized
-        frame.setLayout(null); // using no layout managers
-        frame.setVisible(true); // making the frame visible
+        this.setLayout(null); // using no layout managers
+        this.setVisible(true); // making the frame visible
 
         Global.LOGGER.info("Loading Icons");
-        List<Image> l = new ArrayList<>();
-        l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/1024.png")));
-        l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/512.png")));
-        l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/256.png")));
-        l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/128.png")));
-        l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/64.png")));
-        l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/32.png")));
-        l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/16.png")));
-        frame.setIconImages(l);
+        try {
+            List<Image> l = new ArrayList<>();
+            l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/1024.png")));
+            l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/512.png")));
+            l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/256.png")));
+            l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/128.png")));
+            l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/64.png")));
+            l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/32.png")));
+            l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/16.png")));
+            this.setIconImages(l);
+        } catch (Exception e) {
+            Global.LOGGER.error("Failed to load icons!", e);
+        }
+    }
 
+    public void addComponents() {
         // State labels
         Global.LOGGER.info("Creating Labels");
         seedLabel = new JLabel("Seed: " + seed);
@@ -168,10 +168,10 @@ public class SeedViewer {
 
         biomeLabel = new JLabel("Biome: None");
 
-        frame.add(seedLabel);
-        frame.add(viewLabel);
-        frame.add(zoomLabel);
-        frame.add(biomeLabel);
+        this.add(seedLabel);
+        this.add(viewLabel);
+        this.add(zoomLabel);
+        this.add(biomeLabel);
 
         // Checkboxes
         Global.LOGGER.info("Creating Check boxes");
@@ -185,9 +185,9 @@ public class SeedViewer {
         showCrosshairBox.setSelected(showCrosshair);
         showCrosshairBox.addChangeListener(e -> showCrosshair = showCrosshairBox.isSelected());
 
-        frame.add(slimeChunksBox);
-        frame.add(showBordersBox);
-        frame.add(showCrosshairBox);
+        this.add(slimeChunksBox);
+        this.add(showBordersBox);
+        this.add(showCrosshairBox);
 
         seedInputBox = new JTextField(seed.toString());
         seedInputBox.addActionListener(new AbstractAction() {
@@ -209,25 +209,19 @@ public class SeedViewer {
             }
         });
 
-        frame.add(seedInputBox);
+        this.add(seedInputBox);
 
         Global.LOGGER.info("Creating Image frame");
         imageFrame = new ViewportComponent(this);
         imageFrame.setBorder(new LineBorder(Color.BLACK, 1, false));
         imageFrame.setFocusable(true);
-        frame.add(imageFrame);
-
-        return frame;
+        this.add(imageFrame);
     }
 
     public void initComponents(@Nullable ComponentEvent event) {
         Global.LOGGER.info("Initializing Components");
-        if (mainFrame == null) {
-            Global.LOGGER.warn("MainFrame is null! Skipping");
-            return;
-        }
-        int screenWidth = mainFrame.getContentPane().getWidth();
-        int screenHeight = mainFrame.getContentPane().getHeight();
+        int screenWidth = this.getContentPane().getWidth();
+        int screenHeight = this.getContentPane().getHeight();
 
         int bezel = 30;
 
