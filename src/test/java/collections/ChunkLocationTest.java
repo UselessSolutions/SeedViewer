@@ -3,7 +3,7 @@ package collections;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.useless.collections.ChunkLocation;
+import org.useless.seedviewer.collections.ChunkLocation;
 
 public class ChunkLocationTest {
     @Test

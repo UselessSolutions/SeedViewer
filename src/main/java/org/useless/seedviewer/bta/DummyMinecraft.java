@@ -1,4 +1,4 @@
-package org.useless.bta;
+package org.useless.seedviewer.bta;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.world.chunk.provider.ChunkProviderStatic;

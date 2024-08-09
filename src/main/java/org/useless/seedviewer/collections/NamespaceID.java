@@ -1,4 +1,4 @@
-package org.useless.collections;
+package org.useless.seedviewer.collections;
 
 import org.jetbrains.annotations.NotNull;
 

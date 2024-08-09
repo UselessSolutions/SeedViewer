@@ -1,14 +1,16 @@
-package org.useless;
+package org.useless.seedviewer.gui;
 
 import com.formdev.flatlaf.FlatDarculaLaf;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.useless.bta.BTAChunkProvider;
-import org.useless.collections.ChunkLocation;
-import org.useless.collections.ChunkPos3D;
-import org.useless.components.ViewportComponent;
-import org.useless.data.Biome;
-import org.useless.data.Chunk;
+import org.useless.seedviewer.Global;
+import org.useless.seedviewer.collections.ObjectWrapper;
+import org.useless.seedviewer.bta.BTAChunkProvider;
+import org.useless.seedviewer.collections.ChunkLocation;
+import org.useless.seedviewer.collections.ChunkPos3D;
+import org.useless.seedviewer.gui.components.ViewportComponent;
+import org.useless.seedviewer.data.Biome;
+import org.useless.seedviewer.data.Chunk;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
@@ -25,7 +27,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
-import java.util.logging.Level;
 
 public class SeedViewer {
     // Static Configuration
@@ -52,8 +53,8 @@ public class SeedViewer {
     private boolean showSlimeChunks = true;
     private boolean showBiomeBorders = true;
     private boolean showCrosshair = true;
-    // Components
 
+    // Components
     private final JFrame mainFrame;
     private JLabel imageFrame;
     private JLabel seedLabel;
@@ -65,12 +66,16 @@ public class SeedViewer {
     private JCheckBox showCrosshairBox;
     private JTextField seedInputBox;
 
+
     public SeedViewer(Properties properties) {
+        Global.LOGGER.info("Starting Seed Viewer!");
         this.launchProperties = properties;
         seed.addChangeListener(newValue -> chunkProvider = new BTAChunkProvider(newValue));
         try {
             seed.set(Long.parseLong(properties.getProperty("seed", "100")));
-        } catch (NumberFormatException ignored){}
+        } catch (NumberFormatException ignored){
+            seed.set((long) properties.getProperty("seed", "100").hashCode());
+        }
 
         mainFrame = createFrame();
         initComponents(null);
@@ -84,12 +89,13 @@ public class SeedViewer {
                     try {
                         tick();
                     } catch (Exception e){
-                        e.printStackTrace();
+                        Global.LOGGER.error("Exception when running tick!", e);
                     }
 
                     try {
                         Thread.sleep(1000/TICKS_PER_SECOND);
                     } catch (InterruptedException e) {
+                        Global.LOGGER.error("Unexpected interrupt in tick thread!", e);
                     }
                 }
             }
@@ -100,11 +106,11 @@ public class SeedViewer {
         try {
             UIManager.setLookAndFeel( new FlatDarculaLaf() );
         } catch( Exception ex ) {
-            System.err.println("Failed to initialize LaF");
-            ex.printStackTrace();
+            Global.LOGGER.error("Failed to initialize LaF theme!", ex);
         }
 
         // Creating instance of JFrame
+        Global.LOGGER.info("Initializing Frame");
         JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.setTitle("BTA Seed Viewer!");
@@ -121,6 +127,7 @@ public class SeedViewer {
         frame.setLayout(null); // using no layout managers
         frame.setVisible(true); // making the frame visible
 
+        Global.LOGGER.info("Loading Icons");
         List<Image> l = new ArrayList<>();
         l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/1024.png")));
         l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/512.png")));
@@ -132,6 +139,7 @@ public class SeedViewer {
         frame.setIconImages(l);
 
         // State labels
+        Global.LOGGER.info("Creating Labels");
         seedLabel = new JLabel("Seed: " + seed);
         seed.addChangeListener(newValue -> seedLabel.setText("Seed: " + seed));
 
@@ -166,6 +174,7 @@ public class SeedViewer {
         frame.add(biomeLabel);
 
         // Checkboxes
+        Global.LOGGER.info("Creating Check boxes");
         slimeChunksBox = new JCheckBox("Slime Chunks");
         slimeChunksBox.setSelected(showSlimeChunks);
         slimeChunksBox.addChangeListener(e -> showSlimeChunks = slimeChunksBox.isSelected());
@@ -202,6 +211,7 @@ public class SeedViewer {
 
         frame.add(seedInputBox);
 
+        Global.LOGGER.info("Creating Image frame");
         imageFrame = new ViewportComponent(this);
         imageFrame.setBorder(new LineBorder(Color.BLACK, 1, false));
         imageFrame.setFocusable(true);
@@ -211,7 +221,11 @@ public class SeedViewer {
     }
 
     public void initComponents(@Nullable ComponentEvent event) {
-        if (mainFrame == null) return;
+        Global.LOGGER.info("Initializing Components");
+        if (mainFrame == null) {
+            Global.LOGGER.warn("MainFrame is null! Skipping");
+            return;
+        }
         int screenWidth = mainFrame.getContentPane().getWidth();
         int screenHeight = mainFrame.getContentPane().getHeight();
 
@@ -247,6 +261,7 @@ public class SeedViewer {
     }
 
     public synchronized void updateImage() {
+        Global.LOGGER.debug("Start update image");
         Graphics g = biomeImage.getGraphics();
         g.setColor(Color.BLACK);
         g.fillRect(0, 0, biomeImage.getWidth(), biomeImage.getHeight());
@@ -295,6 +310,7 @@ public class SeedViewer {
         }
         g.dispose();
         imageFrame.repaint();
+        Global.LOGGER.debug("Finished Image Update");
     }
 
     public synchronized void tick() {

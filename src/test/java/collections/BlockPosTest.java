@@ -3,8 +3,8 @@ package collections;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.useless.collections.BlockPos2D;
-import org.useless.collections.BlockPos3D;
+import org.useless.seedviewer.collections.BlockPos2D;
+import org.useless.seedviewer.collections.BlockPos3D;
 
 public class BlockPosTest {
     @Test

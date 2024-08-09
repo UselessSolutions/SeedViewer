@@ -1,9 +1,9 @@
-package org.useless;
+package org.useless.seedviewer.gui;
 
-import org.useless.collections.ChunkLocation;
-import org.useless.collections.ChunkPos3D;
-import org.useless.data.Biome;
-import org.useless.data.Chunk;
+import org.useless.seedviewer.collections.ChunkLocation;
+import org.useless.seedviewer.collections.ChunkPos3D;
+import org.useless.seedviewer.data.Biome;
+import org.useless.seedviewer.data.Chunk;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;

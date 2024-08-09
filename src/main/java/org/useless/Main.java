@@ -1,12 +1,19 @@
 package org.useless;
 
 import org.jetbrains.annotations.NotNull;
+import org.useless.seedviewer.Global;
+import org.useless.seedviewer.gui.SeedViewer;
 
 import java.util.Properties;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("Hello world!");
+        try {
+            Class.forName("net.minecraft.core.world.biome.provider.BiomeProviderOverworld");
+        } catch (ClassNotFoundException e) {
+            Global.LOGGER.error("Could not locate BTA jar! Canceling Startup!", e);
+            return;
+        }
         new SeedViewer(argsToProperties(args));
     }
 
@@ -27,7 +34,7 @@ public class Main {
                 String value = args[++i]; // Get next argument and shift pointer
                 properties.setProperty(key, value);
             } else {
-                System.err.println("Unrecognized argument '" + arg + "'!");
+                Global.LOGGER.error("Unrecognized argument '{}'!", arg);
             }
 
         }
