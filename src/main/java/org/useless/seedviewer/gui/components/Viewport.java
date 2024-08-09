@@ -1,6 +1,7 @@
 package org.useless.seedviewer.gui.components;
 
 import org.jetbrains.annotations.NotNull;
+import org.useless.seedviewer.Global;
 import org.useless.seedviewer.collections.ChunkLocation;
 import org.useless.seedviewer.collections.ChunkPos3D;
 import org.useless.seedviewer.collections.ObjectWrapper;
@@ -9,6 +10,7 @@ import org.useless.seedviewer.data.Chunk;
 import org.useless.seedviewer.gui.ChunkView;
 import org.useless.seedviewer.gui.SeedViewer;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
@@ -17,6 +19,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -28,6 +32,7 @@ public class Viewport extends JLabel {
     public static final float ZOOM_MAX = 16f;
 
     public final Map<ChunkLocation, ChunkView> chunkViewMap = new HashMap<>();
+    private final BufferedImage slimeVignette;
     private BufferedImage biomeImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
 
     public ObjectWrapper<@NotNull Float> zoom = new ObjectWrapper<>(1F);
@@ -44,6 +49,19 @@ public class Viewport extends JLabel {
 
     public Viewport(SeedViewer seedViewer) {
         this.seedViewer = seedViewer;
+
+        BufferedImage _vignette = null;
+        try {
+            InputStream stream = Viewport.class.getResourceAsStream("/slime_vignette.png");
+            if (stream != null) {
+                _vignette = ImageIO.read(stream);
+            } else {
+                Global.LOGGER.error("Stream for 'slime_vignette.png' is null!");
+            }
+        } catch (IOException e) {
+            Global.LOGGER.error("Failed to load slime vignette!");
+        }
+        slimeVignette = _vignette;
     }
 
     public void setup() {
@@ -162,12 +180,21 @@ public class Viewport extends JLabel {
                     null);
                 if (showSlimeChunks.get() && SeedViewer.isSlimeChunk(seedViewer.seed.get(), view.getLocation())) {
                     Graphics gSlime = g.create();
-                    gSlime.setColor(new Color(64, 255, 120, 128));
-                    gSlime.fillRect(
-                        subImgX,
-                        subImgZ,
-                        subImgWidth,
-                        subImgHeight);
+                    if (slimeVignette == null) {
+                        gSlime.setColor(new Color(64, 255, 120, 128));
+                        gSlime.fillRect(
+                            subImgX,
+                            subImgZ,
+                            subImgWidth,
+                            subImgHeight);
+                    } else {
+                        gSlime.drawImage(slimeVignette,
+                            subImgX,
+                            subImgZ,
+                            subImgWidth,
+                            subImgHeight,
+                            null, null);
+                    }
                     gSlime.dispose();
                 }
                 if (showBiomeBorders.get()) {
