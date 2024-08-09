@@ -12,8 +12,11 @@ import org.uselesssolutions.data.Chunk;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -58,7 +61,7 @@ public class SeedViewer {
     private JCheckBox slimeChunksBox;
     private JCheckBox showBordersBox;
     private JCheckBox showCrosshairBox;
-    private JButton button;
+    private JTextField seedInputBox;
 
     public SeedViewer(Properties properties) {
         this.launchProperties = properties;
@@ -156,13 +159,27 @@ public class SeedViewer {
         frame.add(showBordersBox);
         frame.add(showCrosshairBox);
 
-        button = new JButton("Random Seed");
-        button.addActionListener(e -> {
-            seed.set(new Random().nextLong());
-            chunkViewMap.clear();
-            initComponents(null);
+        seedInputBox = new JTextField(seed.toString());
+        seedInputBox.addActionListener(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                long boxSeed;
+                try {
+                    boxSeed = Long.parseLong(seedInputBox.getText());
+                } catch (NumberFormatException exception) {
+                    boxSeed = seedInputBox.getText().hashCode();
+                }
+                if (boxSeed != seed.get()) {
+                    seed.set(boxSeed);
+                    chunkViewMap.clear();
+                    viewX.set(0F);
+                    viewZ.set(0F);
+                    initComponents(null);
+                }
+            }
         });
-        frame.add(button);
+
+        frame.add(seedInputBox);
 
         imageFrame = new ViewportComponent(this);
         imageFrame.setBorder(new LineBorder(Color.DARK_GRAY, 3, true));
@@ -179,8 +196,8 @@ public class SeedViewer {
         int bezel = 30;
 
         int bWidth = (int) (screenWidth * 0.5f);
-        int bHeight = (int) (screenHeight * 0.05f);
-        button.setBounds((screenWidth - bWidth)/2, screenHeight - bHeight - 15, bWidth, bHeight);
+        int bHeight = 40;
+        seedInputBox.setBounds((screenWidth - bWidth)/2, screenHeight - bHeight - 15, bWidth, bHeight);
 
         int labels = 3;
         int currLabel = 0;
