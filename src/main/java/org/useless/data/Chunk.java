@@ -1,7 +1,7 @@
-package org.uselesssolutions.data;
+package org.useless.data;
 
-import org.uselesssolutions.collections.ChunkPos2D;
-import org.uselesssolutions.collections.ChunkPos3D;
+import org.useless.collections.ChunkPos2D;
+import org.useless.collections.ChunkPos3D;
 
 public interface Chunk {
     int CHUNK_SIZE_X = 16;

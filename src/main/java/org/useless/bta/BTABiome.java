@@ -1,9 +1,9 @@
-package org.uselesssolutions.bta;
+package org.useless.bta;
 
 import net.minecraft.core.data.registry.Registries;
 import net.minecraft.core.lang.I18n;
-import org.uselesssolutions.collections.NamespaceID;
-import org.uselesssolutions.data.Biome;
+import org.useless.collections.NamespaceID;
+import org.useless.data.Biome;
 
 public class BTABiome implements Biome {
     private final net.minecraft.core.world.biome.Biome biome;

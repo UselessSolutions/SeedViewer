@@ -1,6 +1,5 @@
-package org.uselesssolutions.bta;
+package org.useless.bta;
 
-import com.sun.imageio.plugins.common.I18N;
 import net.minecraft.core.Global;
 import net.minecraft.core.block.Block;
 import net.minecraft.core.data.registry.Registries;
@@ -10,9 +9,9 @@ import net.minecraft.core.world.biome.Biomes;
 import net.minecraft.core.world.biome.provider.BiomeProvider;
 import net.minecraft.core.world.biome.provider.BiomeProviderOverworld;
 import net.minecraft.core.world.type.WorldTypes;
-import org.uselesssolutions.ChunkProvider;
-import org.uselesssolutions.collections.ChunkLocation;
-import org.uselesssolutions.data.Chunk;
+import org.useless.ChunkProvider;
+import org.useless.collections.ChunkLocation;
+import org.useless.data.Chunk;
 
 public class BTAChunkProvider implements ChunkProvider {
     static {

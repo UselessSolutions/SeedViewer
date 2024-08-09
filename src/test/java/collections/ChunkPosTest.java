@@ -3,9 +3,9 @@ package collections;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.uselesssolutions.collections.ChunkPos2D;
-import org.uselesssolutions.collections.ChunkPos3D;
-import org.uselesssolutions.data.Chunk;
+import org.useless.collections.ChunkPos2D;
+import org.useless.collections.ChunkPos3D;
+import org.useless.data.Chunk;
 
 public class ChunkPosTest {
     @Test

@@ -1,11 +1,11 @@
-package org.uselesssolutions;
+package org.useless;
 
-import org.uselesssolutions.collections.ChunkLocation;
-import org.uselesssolutions.collections.ChunkPos2D;
-import org.uselesssolutions.collections.ChunkPos3D;
-import org.uselesssolutions.collections.NamespaceID;
-import org.uselesssolutions.data.Biome;
-import org.uselesssolutions.data.Chunk;
+import org.useless.collections.ChunkLocation;
+import org.useless.collections.ChunkPos2D;
+import org.useless.collections.ChunkPos3D;
+import org.useless.collections.NamespaceID;
+import org.useless.data.Biome;
+import org.useless.data.Chunk;
 
 public class TestChunkProvider implements ChunkProvider{
     @Override

@@ -1,9 +1,13 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     id("java")
+    id("com.github.johnrengelman.shadow").version("8.1.0")
+    id("maven-publish")
 }
 
-group = "org.uselesssolutions"
-version = "1.0-SNAPSHOT"
+group = "org.useless"
+version = "beta.1"
 
 repositories {
     mavenCentral()
@@ -19,6 +23,19 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+task("jarViewer", ShadowJar::class) {
+    group = "useless"
+
+    from(sourceSets["main"].output.classesDirs)
+    from(sourceSets["main"].resources)
+    archiveFileName.set("SeedViewer-$version.jar")
+    manifest {
+        attributes["Main-Class"] = "org.useless.Main"
+        attributes["Class-Path"] = "libraries/bta-7.2_01-client.jar"
+        attributes["Implementation-Version"] = version
+    }
 }
 
 java {

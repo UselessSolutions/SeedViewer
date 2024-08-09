@@ -1,13 +1,13 @@
-package org.uselesssolutions;
+package org.useless;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.uselesssolutions.bta.BTAChunkProvider;
-import org.uselesssolutions.collections.ChunkLocation;
-import org.uselesssolutions.collections.ChunkPos3D;
-import org.uselesssolutions.components.ViewportComponent;
-import org.uselesssolutions.data.Biome;
-import org.uselesssolutions.data.Chunk;
+import org.useless.bta.BTAChunkProvider;
+import org.useless.collections.ChunkLocation;
+import org.useless.collections.ChunkPos3D;
+import org.useless.components.ViewportComponent;
+import org.useless.data.Biome;
+import org.useless.data.Chunk;
 
 import javax.swing.*;
 import javax.swing.border.LineBorder;
@@ -15,8 +15,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -65,16 +63,16 @@ public class SeedViewer {
 
     public SeedViewer(Properties properties) {
         this.launchProperties = properties;
+        seed.addChangeListener(newValue -> chunkProvider = new BTAChunkProvider(newValue));
         try {
             seed.set(Long.parseLong(properties.getProperty("seed", "100")));
         } catch (NumberFormatException ignored){}
 
         mainFrame = createFrame();
+        initComponents(null);
 
         chunkProvider = new BTAChunkProvider(seed.get());
-        seed.addChangeListener(newValue -> chunkProvider = new BTAChunkProvider(newValue));
 
-        initComponents(null);
 
         new Thread(
             () -> {

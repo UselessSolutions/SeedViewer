@@ -1,6 +1,6 @@
-package org.uselesssolutions.collections;
+package org.useless.collections;
 
-import org.uselesssolutions.data.Chunk;
+import org.useless.data.Chunk;
 
 import java.util.Objects;
 

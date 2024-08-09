@@ -1,4 +1,4 @@
-package org.uselesssolutions.bta;
+package org.useless.bta;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.world.chunk.provider.ChunkProviderStatic;

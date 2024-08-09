@@ -1,4 +1,4 @@
-package org.uselesssolutions;
+package org.useless;
 
 import org.jetbrains.annotations.NotNull;
 

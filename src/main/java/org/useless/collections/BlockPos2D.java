@@ -1,4 +1,4 @@
-package org.uselesssolutions.collections;
+package org.useless.collections;
 
 import java.util.Objects;
 

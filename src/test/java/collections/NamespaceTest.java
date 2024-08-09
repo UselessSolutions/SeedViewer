@@ -3,7 +3,7 @@ package collections;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.uselesssolutions.collections.NamespaceID;
+import org.useless.collections.NamespaceID;
 
 public class NamespaceTest {
     @Test

@@ -1,6 +1,6 @@
-package org.uselesssolutions.data;
+package org.useless.data;
 
-import org.uselesssolutions.collections.NamespaceID;
+import org.useless.collections.NamespaceID;
 
 public interface Biome {
     String getName();
