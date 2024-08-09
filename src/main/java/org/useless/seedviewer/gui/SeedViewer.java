@@ -6,10 +6,8 @@ import org.useless.seedviewer.Global;
 import org.useless.seedviewer.collections.ObjectWrapper;
 import org.useless.seedviewer.bta.BTAChunkProvider;
 import org.useless.seedviewer.collections.ChunkLocation;
-import org.useless.seedviewer.collections.ChunkPos3D;
 import org.useless.seedviewer.gui.components.ViewportComponent;
 import org.useless.seedviewer.data.Biome;
-import org.useless.seedviewer.data.Chunk;
 
 import javax.swing.*;
 import java.awt.*;
@@ -17,9 +15,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 
@@ -30,16 +26,10 @@ public class SeedViewer extends JFrame {
 
     // Storage
     public final Properties launchProperties;
-    public final Map<ChunkLocation, ChunkView> chunkViewMap = new HashMap<>();
 
     // Configuration
     public ChunkProvider chunkProvider;
     public ObjectWrapper<@NotNull Long> seed = new ObjectWrapper<>(100L);
-
-    // User State
-    public boolean showSlimeChunks = true;
-    public boolean showBiomeBorders = true;
-    public boolean showCrosshair = true;
 
     // Components
     private final ViewportComponent viewport;
@@ -137,16 +127,16 @@ public class SeedViewer extends JFrame {
         viewLabel = new JLabel(String.format("View: X:%s, Z:%s", viewport.viewX, viewport.viewZ));
         viewport.viewX.addChangeListener(newValue -> viewLabel.setText(String.format("View: X:%.2f, Z:%.2f", viewport.viewX.get(), viewport.viewZ.get())));
         viewport.viewX.addChangeListener(newValue -> {
-            Biome b = getHoveredBiome();
+            Biome b = viewport.getHoveredBiome();
             if (b == null) {
-                biomeLabel.setText(String.format("Biome: %s", b));
+                biomeLabel.setText("Biome: null");
             } else {
                 biomeLabel.setText(String.format("Biome: %s", b.getName()));
             }
         });
         viewport.viewZ.addChangeListener(newValue -> viewLabel.setText(String.format("View: X:%.2f, Z:%.2f", viewport.viewX.get(), viewport.viewZ.get())));
         viewport.viewZ.addChangeListener(newValue -> {
-            Biome b = getHoveredBiome();
+            Biome b = viewport.getHoveredBiome();
             if (b == null) {
                 biomeLabel.setText("Biome: null");
             } else {
@@ -167,14 +157,14 @@ public class SeedViewer extends JFrame {
         // Checkboxes
         Global.LOGGER.info("Creating Check boxes");
         slimeChunksBox = new JCheckBox("Slime Chunks");
-        slimeChunksBox.setSelected(showSlimeChunks);
-        slimeChunksBox.addChangeListener(e -> showSlimeChunks = slimeChunksBox.isSelected());
+        slimeChunksBox.setSelected(viewport.showSlimeChunks.get());
+        slimeChunksBox.addChangeListener(e -> viewport.showSlimeChunks.set(slimeChunksBox.isSelected()));
         showBordersBox = new JCheckBox("Chunk Borders");
-        showBordersBox.setSelected(showBiomeBorders);
-        showBordersBox.addChangeListener(e -> showBiomeBorders = showBordersBox.isSelected());
+        showBordersBox.setSelected(viewport.showBiomeBorders.get());
+        showBordersBox.addChangeListener(e -> viewport.showBiomeBorders.set(showBordersBox.isSelected()));
         showCrosshairBox = new JCheckBox("Enable Cross-hair");
-        showCrosshairBox.setSelected(showCrosshair);
-        showCrosshairBox.addChangeListener(e -> showCrosshair = showCrosshairBox.isSelected());
+        showCrosshairBox.setSelected(viewport.showCrosshair.get());
+        showCrosshairBox.addChangeListener(e -> viewport.showCrosshair.set(showCrosshairBox.isSelected()));
 
         this.add(slimeChunksBox);
         this.add(showBordersBox);
@@ -192,7 +182,7 @@ public class SeedViewer extends JFrame {
                 }
                 if (boxSeed != seed.get()) {
                     seed.set(boxSeed);
-                    chunkViewMap.clear();
+                    viewport.chunkViewMap.clear();
                     viewport.viewX.set(0F);
                     viewport.viewZ.set(0F);
                     initComponents(null);
@@ -216,11 +206,10 @@ public class SeedViewer extends JFrame {
         int bHeight = 40;
         seedInputBox.setBounds((screenWidth - bWidth)/2, screenHeight - bHeight - 15, bWidth, bHeight);
 
-        int labels = 3;
         int currLabel = 0;
         int lX = (screenWidth + bWidth)/2 + 20;
         int lY = screenHeight - bHeight - BEZEL;
-//        int lHeight = (bHeight + bezel)/labels;
+
         int lHeight = 15;
         seedLabel.setBounds(lX, lY + lHeight * currLabel++, bWidth, lHeight);
         viewLabel.setBounds(lX, lY + lHeight * currLabel++, bWidth, lHeight);
@@ -242,43 +231,9 @@ public class SeedViewer extends JFrame {
         viewport.tick();
     }
 
-    public synchronized void offsetZoom(float delta) {
-        setZoom(viewport.zoom.get() + delta);
-    }
-
-    public synchronized void setZoom(float newZoom) {
-        if (newZoom < ViewportComponent.ZOOM_MIN) newZoom = ViewportComponent.ZOOM_MIN;
-        if (newZoom > ViewportComponent.ZOOM_MAX) newZoom = ViewportComponent.ZOOM_MAX;
-        viewport.zoom.set(newZoom);
-        viewport.updateImage();
-    }
-
-    public synchronized void offsetView(float deltaX, float deltaZ) {
-        setOffsetView(viewport.viewX.get() + (deltaX / viewport.zoom.get()), viewport.viewZ.get() + (deltaZ / viewport.zoom.get()));
-    }
-
-    public synchronized void setOffsetView(float newX, float newZ) {
-        viewport.viewX.set(newX);
-        viewport.viewZ.set(newZ);
-        viewport.updateImage();
-    }
-
-    public synchronized void addChunkView(ChunkLocation location) {
-        chunkViewMap.put(location, new ChunkView(location, chunkProvider));
-    }
-
-    public synchronized void removeChunkView(ChunkLocation location) {
-        chunkViewMap.remove(location);
-    }
-
     public static boolean isSlimeChunk(long worldSeed, @NotNull ChunkLocation location) {
         long slimeXOR = 0x3AD8025FL;
         Random slimerandom = new Random(worldSeed + (location.x * location.x * 0x4c1906L) + (location.x * 0x5ac0dbL) + (location.z * location.z * 0x4307a7L) + (location.z * 0x5f24fL) ^ slimeXOR);
         return slimerandom.nextInt(10) == 0;
-    }
-
-    public Biome getHoveredBiome() {
-        ChunkLocation chunkLocation = new ChunkLocation((int) Math.floor(-viewport.viewX.get()/ Chunk.CHUNK_SIZE_X), (int) Math.floor(-viewport.viewZ.get()/ Chunk.CHUNK_SIZE_Z));
-        return chunkProvider.getChunk(chunkLocation).getBiome(new ChunkPos3D(((int) Math.floor(-viewport.viewX.get())) - chunkLocation.x * Chunk.CHUNK_SIZE_X, 128, ((int) Math.floor(-viewport.viewZ.get())) - chunkLocation.z * Chunk.CHUNK_SIZE_Z));
     }
 }

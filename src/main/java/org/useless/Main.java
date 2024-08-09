@@ -10,7 +10,7 @@ import java.util.Properties;
 
 public class Main {
     public static void main(String[] args) {
-        try {
+        try { // Validate BTA jar is present
             Class.forName("net.minecraft.core.world.biome.provider.BiomeProviderOverworld");
         } catch (ClassNotFoundException e) {
             Global.LOGGER.error("Could not locate BTA jar! Canceling Startup!", e);
