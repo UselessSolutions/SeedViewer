@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "org.useless"
-version = "beta.1"
+version = "beta.2"
 
 repositories {
     mavenCentral()

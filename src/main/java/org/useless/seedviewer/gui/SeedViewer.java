@@ -1,12 +1,11 @@
 package org.useless.seedviewer.gui;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.useless.seedviewer.Global;
 import org.useless.seedviewer.collections.ObjectWrapper;
 import org.useless.seedviewer.bta.BTAChunkProvider;
 import org.useless.seedviewer.collections.ChunkLocation;
-import org.useless.seedviewer.gui.components.ViewportComponent;
+import org.useless.seedviewer.gui.components.Viewport;
 import org.useless.seedviewer.data.Biome;
 
 import javax.swing.*;
@@ -26,13 +25,14 @@ public class SeedViewer extends JFrame {
 
     // Storage
     public final Properties launchProperties;
+    private volatile boolean needsResize = true;
 
     // Configuration
     public ChunkProvider chunkProvider;
     public ObjectWrapper<@NotNull Long> seed = new ObjectWrapper<>(100L);
 
     // Components
-    private final ViewportComponent viewport;
+    private final Viewport viewport;
 
     private JLabel seedLabel;
     private JLabel viewLabel;
@@ -47,7 +47,7 @@ public class SeedViewer extends JFrame {
     public SeedViewer(Properties properties) {
         Global.LOGGER.info("Starting Seed Viewer!");
 
-        viewport = new ViewportComponent(this);
+        viewport = new Viewport(this);
 
         this.launchProperties = properties;
         seed.addChangeListener(newValue -> chunkProvider = new BTAChunkProvider(newValue));
@@ -59,8 +59,6 @@ public class SeedViewer extends JFrame {
 
         initFrame();
         addComponents();
-
-        initComponents(null);
 
         chunkProvider = new BTAChunkProvider(seed.get());
 
@@ -101,7 +99,7 @@ public class SeedViewer extends JFrame {
         this.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                initComponents(e);
+                needsResize = true;
                 viewport.updateImage();
             }
         }); // Register `initComponents` to run when frame is resized
@@ -191,7 +189,7 @@ public class SeedViewer extends JFrame {
                     viewport.chunkViewMap.clear();
                     viewport.viewX.set(0F);
                     viewport.viewZ.set(0F);
-                    initComponents(null);
+                    needsResize = true;
                 }
             }
         });
@@ -203,8 +201,10 @@ public class SeedViewer extends JFrame {
         this.add(viewport);
     }
 
-    public void initComponents(@Nullable ComponentEvent event) {
+    public void initComponents() {
+        if (!needsResize) return;
         Global.LOGGER.info("Initializing Components");
+        needsResize = false;
         int screenWidth = this.getContentPane().getWidth();
         int screenHeight = this.getContentPane().getHeight();
 
@@ -234,6 +234,7 @@ public class SeedViewer extends JFrame {
     }
 
     public synchronized void tick() {
+        initComponents();
         viewport.tick();
     }
 

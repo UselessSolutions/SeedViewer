@@ -23,7 +23,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class ViewportComponent extends JLabel {
+public class Viewport extends JLabel {
     public static final float ZOOM_SENSITIVITY = 0.125f;
     public static final float ZOOM_MIN = 1f;
     public static final float ZOOM_MAX = 16f;
@@ -43,7 +43,7 @@ public class ViewportComponent extends JLabel {
 
     private Point lastLeftClickPoint = null;
 
-    public ViewportComponent(SeedViewer seedViewer) {
+    public Viewport(SeedViewer seedViewer) {
         this.seedViewer = seedViewer;
     }
 
@@ -109,53 +109,6 @@ public class ViewportComponent extends JLabel {
     }
     public synchronized void updateImage() {
         Global.LOGGER.debug("Start update image");
-        Graphics g = biomeImage.getGraphics();
-        g.setColor(Color.BLACK);
-        g.fillRect(0, 0, biomeImage.getWidth(), biomeImage.getHeight());
-        for (ChunkView view : chunkViewMap.values()) {
-            int blockX = view.getLocation().x * Chunk.CHUNK_SIZE_X;
-            int blockZ = view.getLocation().z * Chunk.CHUNK_SIZE_Z;
-
-            int subImgX = (int) Math.floor((blockX + viewX.get()) * zoom.get() + biomeImage.getWidth()/2d);
-            int subImgZ = (int) Math.floor((blockZ + viewZ.get()) * zoom.get() + biomeImage.getHeight()/2d);
-            int subImgWidth = (int) Math.floor(Chunk.CHUNK_SIZE_X * zoom.get());
-            int subImgHeight = (int) Math.floor(Chunk.CHUNK_SIZE_Z * zoom.get());
-            g.drawImage(view.getBiomeMapImage(),
-                subImgX,
-                subImgZ,
-                subImgWidth,
-                subImgHeight,
-                Color.BLACK,
-                null);
-            if (showSlimeChunks.get() && SeedViewer.isSlimeChunk(seedViewer.seed.get(), view.getLocation())) {
-                g.setColor(new Color(64, 255, 120, 128));
-                g.fillRect(
-                    subImgX,
-                    subImgZ,
-                    subImgWidth,
-                    subImgHeight);
-            }
-            if (showBiomeBorders.get()) {
-                g.setColor(Color.BLACK);
-                g.drawRect(
-                    subImgX,
-                    subImgZ,
-                    subImgWidth,
-                    subImgHeight
-                );
-            }
-        }
-        if (showCrosshair.get()) {
-            int centX = biomeImage.getWidth()/2;
-            int centZ = biomeImage.getHeight()/2;
-            int lineReach = 10;
-            int lineWidth = 2;
-            g.setColor(Color.BLACK);
-            g.setXORMode(Color.WHITE);
-            g.fillRect(centX - lineReach, centZ - lineWidth/2, lineReach * 2, lineWidth);
-            g.fillRect(centX - lineWidth/2, centZ - lineReach, lineWidth, lineReach * 2);
-        }
-        g.dispose();
         repaint();
         Global.LOGGER.debug("Finished Image Update");
     }
@@ -165,8 +118,8 @@ public class ViewportComponent extends JLabel {
     }
 
     public synchronized void setZoom(float newZoom) {
-        if (newZoom < ViewportComponent.ZOOM_MIN) newZoom = ViewportComponent.ZOOM_MIN;
-        if (newZoom > ViewportComponent.ZOOM_MAX) newZoom = ViewportComponent.ZOOM_MAX;
+        if (newZoom < Viewport.ZOOM_MIN) newZoom = Viewport.ZOOM_MIN;
+        if (newZoom > Viewport.ZOOM_MAX) newZoom = Viewport.ZOOM_MAX;
         zoom.set(newZoom);
         updateImage();
     }
@@ -192,5 +145,61 @@ public class ViewportComponent extends JLabel {
     public Biome getHoveredBiome() {
         ChunkLocation chunkLocation = new ChunkLocation((int) Math.floor(-viewX.get()/ Chunk.CHUNK_SIZE_X), (int) Math.floor(-viewZ.get()/ Chunk.CHUNK_SIZE_Z));
         return seedViewer.chunkProvider.getChunk(chunkLocation).getBiome(new ChunkPos3D(((int) Math.floor(-viewX.get())) - chunkLocation.x * Chunk.CHUNK_SIZE_X, 128, ((int) Math.floor(-viewZ.get())) - chunkLocation.z * Chunk.CHUNK_SIZE_Z));
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        synchronized (this) {
+            for (ChunkView view : chunkViewMap.values()) {
+                int blockX = view.getLocation().x * Chunk.CHUNK_SIZE_X;
+                int blockZ = view.getLocation().z * Chunk.CHUNK_SIZE_Z;
+
+                int subImgX = (int) Math.floor((blockX + viewX.get()) * zoom.get() + biomeImage.getWidth()/2d);
+                int subImgZ = (int) Math.floor((blockZ + viewZ.get()) * zoom.get() + biomeImage.getHeight()/2d);
+                int subImgWidth = (int) Math.floor(Chunk.CHUNK_SIZE_X * zoom.get());
+                int subImgHeight = (int) Math.floor(Chunk.CHUNK_SIZE_Z * zoom.get());
+                g.drawImage(view.getBiomeMapImage(),
+                    subImgX,
+                    subImgZ,
+                    subImgWidth,
+                    subImgHeight,
+                    null,
+                    null);
+                if (showSlimeChunks.get() && SeedViewer.isSlimeChunk(seedViewer.seed.get(), view.getLocation())) {
+                    Graphics gSlime = g.create();
+                    gSlime.setColor(new Color(64, 255, 120, 128));
+                    gSlime.fillRect(
+                        subImgX,
+                        subImgZ,
+                        subImgWidth,
+                        subImgHeight);
+                    gSlime.dispose();
+                }
+                if (showBiomeBorders.get()) {
+                    Graphics gBorders = g.create();
+                    gBorders.setColor(Color.BLACK);
+                    gBorders.drawRect(
+                        subImgX,
+                        subImgZ,
+                        subImgWidth,
+                        subImgHeight
+                    );
+                    gBorders.dispose();
+                }
+            }
+            if (showCrosshair.get()) {
+                Graphics gCrosshair = g.create();
+                int centX = biomeImage.getWidth()/2;
+                int centZ = biomeImage.getHeight()/2;
+                int lineReach = 10;
+                int lineWidth = 2;
+                gCrosshair.setColor(Color.BLACK);
+                gCrosshair.setXORMode(Color.WHITE);
+                gCrosshair.fillRect(centX - lineReach, centZ - lineWidth/2, lineReach * 2, lineWidth);
+                gCrosshair.fillRect(centX - lineWidth/2, centZ - lineReach, lineWidth, lineReach * 2);
+                gCrosshair.dispose();
+            }
+        }
     }
 }
