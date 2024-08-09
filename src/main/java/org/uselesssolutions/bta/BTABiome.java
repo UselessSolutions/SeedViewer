@@ -1,6 +1,7 @@
 package org.uselesssolutions.bta;
 
 import net.minecraft.core.data.registry.Registries;
+import net.minecraft.core.lang.I18n;
 import org.uselesssolutions.collections.NamespaceID;
 import org.uselesssolutions.data.Biome;
 
@@ -11,7 +12,7 @@ public class BTABiome implements Biome {
     }
     @Override
     public String getName() {
-        return biome.translationKey;
+        return I18n.getInstance().translateKey(biome.translationKey);
     }
 
     @Override
