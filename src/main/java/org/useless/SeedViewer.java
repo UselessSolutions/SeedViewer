@@ -248,7 +248,7 @@ public class SeedViewer {
 
     public synchronized void updateImage() {
         Graphics g = biomeImage.getGraphics();
-        g.setColor(Color.WHITE);
+        g.setColor(Color.BLACK);
         g.fillRect(0, 0, biomeImage.getWidth(), biomeImage.getHeight());
         for (ChunkView view : chunkViewMap.values()) {
             int blockX = view.getLocation().x * Chunk.CHUNK_SIZE_X;
@@ -298,7 +298,7 @@ public class SeedViewer {
     }
 
     public synchronized void tick() {
-        final byte OVER_SCAN = 1;
+        final byte OVER_SCAN = 4;
         ChunkLocation topLeftLocation =
             new ChunkLocation(
                 (int) ((-viewX.get() - (biomeImage.getWidth()/(zoom.get() * 2)))/Chunk.CHUNK_SIZE_X) - OVER_SCAN,
