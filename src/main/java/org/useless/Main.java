@@ -1,18 +1,25 @@
 package org.useless;
 
+import com.formdev.flatlaf.FlatDarculaLaf;
 import org.jetbrains.annotations.NotNull;
 import org.useless.seedviewer.Global;
 import org.useless.seedviewer.gui.SeedViewer;
 
+import javax.swing.*;
 import java.util.Properties;
 
 public class Main {
     public static void main(String[] args) {
-        try {
+        try { // Validate BTA jar is present
             Class.forName("net.minecraft.core.world.biome.provider.BiomeProviderOverworld");
         } catch (ClassNotFoundException e) {
             Global.LOGGER.error("Could not locate BTA jar! Canceling Startup!", e);
             return;
+        }
+        try {
+            UIManager.setLookAndFeel( new FlatDarculaLaf() );
+        } catch( Exception ex ) {
+            Global.LOGGER.error("Failed to initialize LaF theme!", ex);
         }
         new SeedViewer(argsToProperties(args));
     }
