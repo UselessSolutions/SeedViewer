@@ -1,8 +1,7 @@
-package org.useless;
+package org.useless.seedviewer;
 
 import com.formdev.flatlaf.FlatDarculaLaf;
 import org.jetbrains.annotations.NotNull;
-import org.useless.seedviewer.Global;
 import org.useless.seedviewer.gui.SeedViewer;
 
 import javax.swing.*;

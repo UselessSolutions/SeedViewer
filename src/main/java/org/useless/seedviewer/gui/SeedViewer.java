@@ -103,7 +103,7 @@ public class SeedViewer extends JFrame {
                 needsResize = true;
                 viewport.repaint();
             }
-        }); // Register `initComponents` to run when frame is resized
+        });
         this.setLayout(null); // using no layout managers
         this.setVisible(true); // making the frame visible
 

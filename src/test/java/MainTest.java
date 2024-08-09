@@ -1,7 +1,7 @@
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.useless.Main;
+import org.useless.seedviewer.Main;
 
 import java.util.Map;
 import java.util.Properties;
