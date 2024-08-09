@@ -34,6 +34,7 @@ public class SeedViewer extends JFrame {
     // Components
     private final Viewport viewport;
 
+    private JLabel versionLabel;
     private JLabel seedLabel;
     private JLabel viewLabel;
     private JLabel zoomLabel;
@@ -92,7 +93,7 @@ public class SeedViewer extends JFrame {
         // Creating instance of JFrame
         Global.LOGGER.info("Initializing Frame");
         this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        this.setTitle("BTA Seed Viewer!");
+        this.setTitle("BTA Seed Viewer! Version: " + Global.VERSION);
         this.setSize(960, 720);
         this.setMinimumSize(new Dimension(480, 360));
         this.setResizable(true);
@@ -100,7 +101,7 @@ public class SeedViewer extends JFrame {
             @Override
             public void componentResized(ComponentEvent e) {
                 needsResize = true;
-                viewport.updateImage();
+                viewport.repaint();
             }
         }); // Register `initComponents` to run when frame is resized
         this.setLayout(null); // using no layout managers

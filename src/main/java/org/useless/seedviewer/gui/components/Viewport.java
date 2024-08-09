@@ -1,7 +1,6 @@
 package org.useless.seedviewer.gui.components;
 
 import org.jetbrains.annotations.NotNull;
-import org.useless.seedviewer.Global;
 import org.useless.seedviewer.collections.ChunkLocation;
 import org.useless.seedviewer.collections.ChunkPos3D;
 import org.useless.seedviewer.collections.ObjectWrapper;
@@ -105,12 +104,7 @@ public class Viewport extends JLabel {
         for (ChunkLocation location : offScreenLocations) {
             removeChunkView(location);
         }
-        updateImage();
-    }
-    public synchronized void updateImage() {
-        Global.LOGGER.debug("Start update image");
         repaint();
-        Global.LOGGER.debug("Finished Image Update");
     }
 
     public synchronized void offsetZoom(float delta) {
@@ -121,7 +115,7 @@ public class Viewport extends JLabel {
         if (newZoom < Viewport.ZOOM_MIN) newZoom = Viewport.ZOOM_MIN;
         if (newZoom > Viewport.ZOOM_MAX) newZoom = Viewport.ZOOM_MAX;
         zoom.set(newZoom);
-        updateImage();
+        repaint();
     }
 
     public synchronized void offsetView(float deltaX, float deltaZ) {
@@ -131,7 +125,7 @@ public class Viewport extends JLabel {
     public synchronized void setOffsetView(float newX, float newZ) {
         viewX.set(newX);
         viewZ.set(newZ);
-        updateImage();
+        repaint();
     }
 
     public synchronized void addChunkView(ChunkLocation location) {
