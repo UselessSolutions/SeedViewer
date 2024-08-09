@@ -15,10 +15,14 @@ repositories {
 
 dependencies {
     implementation("org.jetbrains:annotations:24.0.0")
+
+    implementation("com.formdev:flatlaf:3.1.1")
+
+    implementation(files("lib/bta-7.2_01-client.jar"))
+
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 
-    implementation(files("lib/bta-7.2_01-client.jar"))
 }
 
 tasks.test {

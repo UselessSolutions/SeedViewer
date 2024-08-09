@@ -1,5 +1,6 @@
 package org.useless;
 
+import com.formdev.flatlaf.FlatDarculaLaf;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.useless.bta.BTAChunkProvider;
@@ -16,12 +17,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
+import java.util.logging.Level;
 
 public class SeedViewer {
     // Static Configuration
@@ -93,11 +97,19 @@ public class SeedViewer {
     }
 
     public @NotNull JFrame createFrame() {
+        try {
+            UIManager.setLookAndFeel( new FlatDarculaLaf() );
+        } catch( Exception ex ) {
+            System.err.println("Failed to initialize LaF");
+            ex.printStackTrace();
+        }
+
         // Creating instance of JFrame
         JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.setTitle("BTA Seed Viewer!");
         frame.setSize(960, 720);
+        frame.setMinimumSize(new Dimension(480, 360));
         frame.setResizable(true);
         frame.addComponentListener(new ComponentAdapter() {
             @Override
@@ -108,6 +120,16 @@ public class SeedViewer {
         }); // Register `initComponents` to run when frame is resized
         frame.setLayout(null); // using no layout managers
         frame.setVisible(true); // making the frame visible
+
+        List<Image> l = new ArrayList<>();
+        l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/1024.png")));
+        l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/512.png")));
+        l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/256.png")));
+        l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/128.png")));
+        l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/64.png")));
+        l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/32.png")));
+        l.add(Toolkit.getDefaultToolkit().getImage(getClass().getResource("/icons/16.png")));
+        frame.setIconImages(l);
 
         // State labels
         seedLabel = new JLabel("Seed: " + seed);
@@ -127,7 +149,7 @@ public class SeedViewer {
         viewZ.addChangeListener(newValue -> {
             Biome b = getHoveredBiome();
             if (b == null) {
-                biomeLabel.setText(String.format("Biome: %s", b));
+                biomeLabel.setText("Biome: null");
             } else {
                 biomeLabel.setText(String.format("Biome: %s", b.getName()));
             }
@@ -181,7 +203,7 @@ public class SeedViewer {
         frame.add(seedInputBox);
 
         imageFrame = new ViewportComponent(this);
-        imageFrame.setBorder(new LineBorder(Color.DARK_GRAY, 3, true));
+        imageFrame.setBorder(new LineBorder(Color.BLACK, 1, false));
         imageFrame.setFocusable(true);
         frame.add(imageFrame);
 
@@ -189,6 +211,7 @@ public class SeedViewer {
     }
 
     public void initComponents(@Nullable ComponentEvent event) {
+        if (mainFrame == null) return;
         int screenWidth = mainFrame.getContentPane().getWidth();
         int screenHeight = mainFrame.getContentPane().getHeight();
 
@@ -275,7 +298,7 @@ public class SeedViewer {
     }
 
     public synchronized void tick() {
-        final byte OVER_SCAN = 2;
+        final byte OVER_SCAN = 1;
         ChunkLocation topLeftLocation =
             new ChunkLocation(
                 (int) ((-viewX.get() - (biomeImage.getWidth()/(zoom.get() * 2)))/Chunk.CHUNK_SIZE_X) - OVER_SCAN,
