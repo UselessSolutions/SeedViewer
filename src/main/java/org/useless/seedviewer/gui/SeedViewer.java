@@ -67,11 +67,17 @@ public class SeedViewer extends JFrame {
 
         new Thread(
             () -> {
+                long tickCount = 0;
                 while (true) {
                     try {
                         tick();
+                        tickCount++;
                     } catch (Exception e){
                         Global.LOGGER.error("Exception when running tick!", e);
+                    }
+
+                    if (tickCount % (5 * TICKS_PER_SECOND) == 0) {
+                        System.gc();
                     }
 
                     try {
