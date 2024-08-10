@@ -216,17 +216,28 @@ public class Viewport extends JLabel {
                     }
                     gSlime.dispose();
                 }
-                if (showBiomeBorders.get()) {
-                    Graphics gBorders = g.create();
-                    gBorders.setColor(Color.BLACK);
-                    gBorders.drawRect(
-                        subImgX,
-                        subImgZ,
-                        subImgWidth,
-                        subImgHeight
-                    );
-                    gBorders.dispose();
+            }
+            if (showBiomeBorders.get()) {
+                int leftChunk = viewportBounds.x / Chunk.CHUNK_SIZE_X;
+                int widthChunks = viewportBounds.width / Chunk.CHUNK_SIZE_X;
+                int topChunk = viewportBounds.y / Chunk.CHUNK_SIZE_Z;
+                int heightChunks = viewportBounds.height / Chunk.CHUNK_SIZE_Z;
+
+                Graphics gBorders = g.create();
+                gBorders.setColor(Color.BLACK);
+                for (int _x = leftChunk; _x <= leftChunk + widthChunks; _x++) {
+                    float blockX = (_x * Chunk.CHUNK_SIZE_X);
+                    int subImgX = (int) Math.floor((blockX - viewX.get()) * zoom.get() + getWidth()/2d);
+
+                    gBorders.drawLine(subImgX, 0, subImgX, getHeight());
                 }
+                for (int _z = topChunk; _z < topChunk + heightChunks; _z++) {
+                    float blockZ = (_z * Chunk.CHUNK_SIZE_Z);
+                    int subImgZ = (int) Math.floor((blockZ + viewZ.get()) * zoom.get() + getHeight()/2d);
+
+                    gBorders.drawLine(0, subImgZ, getWidth(), subImgZ);
+                }
+                gBorders.dispose();
             }
             if (showCrosshair.get()) {
                 Graphics gCrosshair = g.create();
