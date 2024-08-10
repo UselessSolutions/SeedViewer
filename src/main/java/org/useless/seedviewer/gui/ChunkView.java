@@ -20,9 +20,12 @@ public class ChunkView {
     private final ChunkLocation location;
     private final ChunkProvider provider;
 
+    public long lastSeenTime = System.currentTimeMillis();
+
     public ChunkView(ChunkLocation location, ChunkProvider provider) {
         this.location = location;
         this.provider = provider;
+
         new Thread(
             () -> {
 
@@ -77,5 +80,9 @@ public class ChunkView {
 
     public BufferedImage getHeightMapImage() {
         return heightMapImage;
+    }
+
+    public Rectangle getWorldBounds() {
+        return new Rectangle(location.x * Chunk.CHUNK_SIZE_X, location.z * Chunk.CHUNK_SIZE_Z, Chunk.CHUNK_SIZE_X, Chunk.CHUNK_SIZE_Z);
     }
 }

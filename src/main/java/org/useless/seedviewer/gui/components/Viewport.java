@@ -27,6 +27,9 @@ import java.util.Map;
 import java.util.Set;
 
 public class Viewport extends JLabel {
+    public static final long MS_UNTIL_CHUNK_UNLOAD = 5000;
+    public static final int VIEWPORT_CHUNKS_OVERSCAN = 2;
+
     public static final float ZOOM_SENSITIVITY = 0.125f;
     public static final float ZOOM_MIN = 1f;
     public static final float ZOOM_MAX = 16f;
@@ -98,27 +101,42 @@ public class Viewport extends JLabel {
     }
 
     public void tick() {
-        final byte OVER_SCAN = 4;
-        ChunkLocation topLeftLocation =
-            new ChunkLocation(
-                (int) ((viewX.get() - (getWidth()/(zoom.get() * 2)))/ Chunk.CHUNK_SIZE_X) - OVER_SCAN,
-                (int) ((-viewZ.get() - (getHeight()/(zoom.get() * 2)))/Chunk.CHUNK_SIZE_Z) - OVER_SCAN);
-        int chunksX = (int) Math.ceil(getWidth()/(Chunk.CHUNK_SIZE_X * zoom.get())) + (OVER_SCAN * 2);
-        int chunksZ = (int) Math.ceil(getHeight()/(Chunk.CHUNK_SIZE_Z * zoom.get())) + (OVER_SCAN * 2);
+        Rectangle viewportBounds = getViewportBounds();
+        Set<ChunkLocation> removalQueue = new HashSet<>();
+        for (ChunkView view : chunkViewMap.values()) {
+            if (viewportBounds.intersects(view.getWorldBounds())) {
+                view.lastSeenTime = System.currentTimeMillis();
+            }
+            if (System.currentTimeMillis() - view.lastSeenTime > MS_UNTIL_CHUNK_UNLOAD) {
+                removalQueue.add(view.getLocation());
+            }
+        }
+        for (ChunkLocation location : removalQueue) {
+            removeChunkView(location);
+        }
 
-        Set<ChunkLocation> offScreenLocations = new HashSet<>(chunkViewMap.keySet());
+        ChunkLocation topLeftLocation =
+            new ChunkLocation(viewportBounds.x/Chunk.CHUNK_SIZE_X,
+                viewportBounds.y/Chunk.CHUNK_SIZE_Z);
+        int chunksX = viewportBounds.width/Chunk.CHUNK_SIZE_X;
+        int chunksZ = viewportBounds.height/Chunk.CHUNK_SIZE_Z;
+
         for (int _x = topLeftLocation.x; _x < topLeftLocation.x + chunksX; _x++) {
             for (int _z = topLeftLocation.z; _z < topLeftLocation.z + chunksZ; _z++) {
                 ChunkLocation location = new ChunkLocation(_x, _z);
-                offScreenLocations.remove(location);
                 if (chunkViewMap.containsKey(location)) continue;
                 addChunkView(location);
             }
         }
-        for (ChunkLocation location : offScreenLocations) {
-            removeChunkView(location);
-        }
         repaint();
+    }
+
+    public Rectangle getViewportBounds() {
+        final int blockX = (int) Math.floor((viewX.get() - (getWidth()/(zoom.get() * 2))));
+        final int blockZ = (int) Math.floor((-viewZ.get() - (getHeight()/(zoom.get() * 2))));
+        final int widthBlocks = (int) Math.ceil((getWidth()/zoom.get()));
+        final int heightBlocks = (int) Math.ceil((getHeight()/zoom.get()));
+        return new Rectangle(blockX - (Chunk.CHUNK_SIZE_X * VIEWPORT_CHUNKS_OVERSCAN), blockZ - (Chunk.CHUNK_SIZE_Z * VIEWPORT_CHUNKS_OVERSCAN), widthBlocks + Chunk.CHUNK_SIZE_X * (VIEWPORT_CHUNKS_OVERSCAN + 1), heightBlocks + Chunk.CHUNK_SIZE_Z * (VIEWPORT_CHUNKS_OVERSCAN + 1));
     }
 
     public synchronized void offsetZoom(float delta) {
@@ -162,7 +180,9 @@ public class Viewport extends JLabel {
     }
     public void paintToGraphics(Graphics g) {
         synchronized (this) {
+            Rectangle viewportBounds = getViewportBounds();
             for (ChunkView view : chunkViewMap.values()) {
+                if (!viewportBounds.intersects(view.getWorldBounds())) continue;
                 int blockX = view.getLocation().x * Chunk.CHUNK_SIZE_X;
                 int blockZ = view.getLocation().z * Chunk.CHUNK_SIZE_Z;
 
