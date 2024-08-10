@@ -33,12 +33,15 @@ public class InputPanel extends JPanel {
         slimeChunksBox = new JCheckBox("Slime Chunks");
         slimeChunksBox.setSelected(seedViewer.viewport.showSlimeChunks.get());
         slimeChunksBox.addChangeListener(e -> seedViewer.viewport.showSlimeChunks.set(slimeChunksBox.isSelected()));
+        slimeChunksBox.addChangeListener(e -> seedViewer.viewport.repaint());
         showBordersBox = new JCheckBox("Chunk Borders");
         showBordersBox.setSelected(seedViewer.viewport.showBiomeBorders.get());
         showBordersBox.addChangeListener(e -> seedViewer.viewport.showBiomeBorders.set(showBordersBox.isSelected()));
+        showBordersBox.addChangeListener(e -> seedViewer.viewport.repaint());
         showCrosshairBox = new JCheckBox("Enable Cross-hair");
         showCrosshairBox.setSelected(seedViewer.viewport.showCrosshair.get());
         showCrosshairBox.addChangeListener(e -> seedViewer.viewport.showCrosshair.set(showCrosshairBox.isSelected()));
+        showCrosshairBox.addChangeListener(e -> seedViewer.viewport.repaint());
 
         this.add(slimeChunksBox);
         resizeList.add(slimeChunksBox);
