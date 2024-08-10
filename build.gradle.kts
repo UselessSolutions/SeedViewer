@@ -20,7 +20,7 @@ dependencies {
 
     implementation("com.formdev:flatlaf:3.1.1")?.let { jarIncludes(it) }
 
-    implementation(files("lib/bta-7.2_01-client.jar"))?.let { jarIncludes(it) }
+    implementation(files("lib/bta-7.2_01-server.jar"))?.let { jarIncludes(it) }
 
     val log4jVersion = "2.20.0"
     implementation("org.apache.logging.log4j:log4j-core:${log4jVersion}")?.let { jarIncludes(it) }

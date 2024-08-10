@@ -1,5 +1,6 @@
 package org.useless.seedviewer.gui.components;
 
+import net.minecraft.core.Global;
 import org.useless.seedviewer.data.Biome;
 import org.useless.seedviewer.gui.SeedViewer;
 
@@ -13,6 +14,7 @@ public class InfoPanel extends JPanel {
     private final SeedViewer seedViewer;
     public JLabel titleLabel;
 
+    public JLabel btaLabel;
     public JLabel seedLabel;
     public JLabel viewLabel;
     public JLabel zoomLabel;
@@ -29,6 +31,15 @@ public class InfoPanel extends JPanel {
     public void setup() {
         titleLabel = new JLabel("Information: ");
         this.add(titleLabel);
+
+        try {
+            Class.forName("net.minecraft.core.Global");
+            btaLabel = new JLabel("BTA Version: " + Global.VERSION);
+        } catch (ClassNotFoundException e) {
+            btaLabel = new JLabel("BTA Version: Missing!");
+        }
+        add(btaLabel);
+        resizeList.add(btaLabel);
 
         seedLabel = new JLabel("Seed: " + seedViewer.seed);
         seedViewer.seed.addChangeListener(newValue -> seedLabel.setText("Seed: " + seedViewer.seed));
