@@ -1,6 +1,7 @@
 package org.useless.seedviewer.gui.components;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.useless.seedviewer.Global;
 import org.useless.seedviewer.collections.ChunkLocation;
 import org.useless.seedviewer.collections.ChunkPos3D;
@@ -26,32 +27,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class Viewport extends JLabel {
-    public static final long MS_UNTIL_CHUNK_UNLOAD = 5000;
-    public static final int VIEWPORT_CHUNKS_OVERSCAN = 4;
-
-    public static final float ZOOM_SENSITIVITY = 0.125f;
-    public static final float ZOOM_MIN = 1f;
-    public static final float ZOOM_MAX = 16f;
-
-    public final Map<ChunkLocation, ChunkView> chunkViewMap = new HashMap<>();
-    private final BufferedImage slimeVignette;
-
-    public ObjectWrapper<@NotNull Float> zoom = new ObjectWrapper<>(1F);
-    public ObjectWrapper<@NotNull Float> viewX = new ObjectWrapper<>(0F);
-    public ObjectWrapper<@NotNull Float> viewZ = new ObjectWrapper<>(0F);
-
-    public ObjectWrapper<@NotNull Boolean> showSlimeChunks = new ObjectWrapper<>(true);
-    public ObjectWrapper<@NotNull Boolean> showBiomeBorders = new ObjectWrapper<>(true);
-    public ObjectWrapper<@NotNull Boolean> showCrosshair = new ObjectWrapper<>(true);
-
-    private final SeedViewer seedViewer;
-
-    private Point lastLeftClickPoint = null;
-
-    public Viewport(SeedViewer seedViewer) {
-        this.seedViewer = seedViewer;
-
+public class Viewport extends JPanel {
+    private static final BufferedImage SLIME_VIGNETTE;
+    static {
         BufferedImage _vignette = null;
         try {
             InputStream stream = Viewport.class.getResourceAsStream("/slime_vignette.png");
@@ -63,7 +41,37 @@ public class Viewport extends JLabel {
         } catch (IOException e) {
             Global.LOGGER.error("Failed to load slime vignette!");
         }
-        slimeVignette = _vignette;
+        SLIME_VIGNETTE = _vignette;
+    }
+    public static final long MS_UNTIL_CHUNK_UNLOAD = 5000;
+    public static final int VIEWPORT_CHUNKS_OVERSCAN = 4;
+
+    public static final float ZOOM_SENSITIVITY = 0.125f;
+    public static final float ZOOM_MIN = 1f;
+    public static final float ZOOM_MAX = 16f;
+
+
+    public final ObjectWrapper<@NotNull Float> zoom = new ObjectWrapper<>(1F);
+    public final ObjectWrapper<@NotNull Float> viewX = new ObjectWrapper<>(0F);
+    public final ObjectWrapper<@NotNull Float> viewZ = new ObjectWrapper<>(0F);
+
+    public final ObjectWrapper<@NotNull Boolean> showSlimeChunks = new ObjectWrapper<>(true);
+    public final ObjectWrapper<@NotNull Boolean> showBiomeBorders = new ObjectWrapper<>(true);
+    public final ObjectWrapper<@NotNull Boolean> showCrosshair = new ObjectWrapper<>(true);
+
+    public final Map<Point, SubFrame> chunkFrames = new HashMap<>();
+    private final SubFrame subFrame;
+
+    private final SeedViewer seedViewer;
+
+    private Point lastLeftClickPoint = null;
+
+    private boolean didConstruct = false;
+    public Viewport(SeedViewer seedViewer) {
+        this.seedViewer = seedViewer;
+        this.subFrame = new SubFrame(new Point(0, 0), this);
+        chunkFrames.put(subFrame.framePos, subFrame);
+        didConstruct = true;
     }
 
     public void setup() {
@@ -94,39 +102,27 @@ public class Viewport extends JLabel {
         });
         this.setBorder(new LineBorder(Color.BLACK, 1, false));
         this.setFocusable(true);
+
+        this.add(subFrame);
     }
 
     public void onResize(Rectangle newShape) {
         this.setBounds(newShape.x, newShape.y, newShape.width, newShape.height);
+        repositionFrames();
+    }
+
+    private void repositionFrames() {
+        if (!didConstruct) return;
+        for (SubFrame frame : chunkFrames.values()) {
+            int pX = (int) Math.floor(-viewX.get() + frame.framePos.x * SubFrame.CHUNKS_X);
+            int pZ = (int) Math.floor(viewZ.get() + frame.framePos.y * SubFrame.CHUNKS_Z);
+            frame.setBounds(pX, pZ, SubFrame.CHUNKS_X * Chunk.CHUNK_SIZE_X, SubFrame.CHUNKS_Z * Chunk.CHUNK_SIZE_Z);
+        }
     }
 
     public void tick() {
-        Rectangle viewportBounds = getViewportBounds();
-        Set<ChunkLocation> removalQueue = new HashSet<>();
-        for (ChunkView view : chunkViewMap.values()) {
-            if (viewportBounds.intersects(view.getWorldBounds())) {
-                view.lastSeenTime = System.currentTimeMillis();
-            }
-            if (System.currentTimeMillis() - view.lastSeenTime > MS_UNTIL_CHUNK_UNLOAD) {
-                removalQueue.add(view.getLocation());
-            }
-        }
-        for (ChunkLocation location : removalQueue) {
-            removeChunkView(location);
-        }
-
-        ChunkLocation topLeftLocation =
-            new ChunkLocation(viewportBounds.x/Chunk.CHUNK_SIZE_X,
-                viewportBounds.y/Chunk.CHUNK_SIZE_Z);
-        int chunksX = viewportBounds.width/Chunk.CHUNK_SIZE_X;
-        int chunksZ = viewportBounds.height/Chunk.CHUNK_SIZE_Z;
-
-        for (int _x = topLeftLocation.x; _x < topLeftLocation.x + chunksX; _x++) {
-            for (int _z = topLeftLocation.z; _z < topLeftLocation.z + chunksZ; _z++) {
-                ChunkLocation location = new ChunkLocation(_x, _z);
-                if (chunkViewMap.containsKey(location)) continue;
-                addChunkView(location);
-            }
+        for (SubFrame frame : chunkFrames.values()) {
+            frame.tick();
         }
         repaint();
     }
@@ -147,7 +143,7 @@ public class Viewport extends JLabel {
         if (newZoom < Viewport.ZOOM_MIN) newZoom = Viewport.ZOOM_MIN;
         if (newZoom > Viewport.ZOOM_MAX) newZoom = Viewport.ZOOM_MAX;
         zoom.set(newZoom);
-        repaint();
+//        repaint();
     }
 
     public synchronized void offsetView(float deltaX, float deltaZ) {
@@ -157,20 +153,23 @@ public class Viewport extends JLabel {
     public synchronized void setOffsetView(float newX, float newZ) {
         viewX.set(newX);
         viewZ.set(newZ);
-        repaint();
-    }
-
-    public synchronized void addChunkView(ChunkLocation location) {
-        chunkViewMap.put(location, new ChunkView(location, seedViewer.chunkProvider));
-    }
-
-    public synchronized void removeChunkView(ChunkLocation location) {
-        chunkViewMap.remove(location);
+//        repaint();
     }
 
     public Biome getHoveredBiome() {
         ChunkLocation chunkLocation = new ChunkLocation((int) Math.floor(viewX.get()/ Chunk.CHUNK_SIZE_X), (int) Math.floor(-viewZ.get()/ Chunk.CHUNK_SIZE_Z));
         return seedViewer.chunkProvider.getChunk(chunkLocation).getBiome(new ChunkPos3D(((int) Math.floor(viewX.get())) - chunkLocation.x * Chunk.CHUNK_SIZE_X, 128, ((int) Math.floor(-viewZ.get())) - chunkLocation.z * Chunk.CHUNK_SIZE_Z));
+    }
+
+    @Override
+    public void repaint() {
+//        repositionFrames();
+//        if (chunkFrames != null) {
+//            for (SubFrame frame : chunkFrames.values()) {
+//                frame.repaint();
+//            }
+//        }
+        super.repaint();
     }
 
     @Override
@@ -181,53 +180,53 @@ public class Viewport extends JLabel {
     public void paintToGraphics(Graphics g) {
         synchronized (this) {
             Rectangle viewportBounds = getViewportBounds();
-            for (ChunkView view : chunkViewMap.values()) {
-                if (!viewportBounds.intersects(view.getWorldBounds())) continue;
-                int blockX = view.getLocation().x * Chunk.CHUNK_SIZE_X;
-                int blockZ = view.getLocation().z * Chunk.CHUNK_SIZE_Z;
-
-                int subImgX = (int) Math.floor((blockX - viewX.get()) * zoom.get() + getWidth()/2d);
-                int subImgZ = (int) Math.floor((blockZ + viewZ.get()) * zoom.get() + getHeight()/2d);
-                int subImgWidth = (int) Math.floor(Chunk.CHUNK_SIZE_X * zoom.get());
-                int subImgHeight = (int) Math.floor(Chunk.CHUNK_SIZE_Z * zoom.get());
-                g.drawImage(view.getBiomeMapImage(),
-                    subImgX,
-                    subImgZ,
-                    subImgWidth,
-                    subImgHeight,
-                    null,
-                    null);
-                if (showSlimeChunks.get() && SeedViewer.isSlimeChunk(seedViewer.seed.get(), view.getLocation())) {
-                    Graphics gSlime = g.create();
-                    if (slimeVignette == null) {
-                        gSlime.setColor(new Color(64, 255, 120, 128));
-                        gSlime.fillRect(
-                            subImgX,
-                            subImgZ,
-                            subImgWidth,
-                            subImgHeight);
-                    } else {
-                        gSlime.drawImage(slimeVignette,
-                            subImgX,
-                            subImgZ,
-                            subImgWidth,
-                            subImgHeight,
-                            null, null);
-                    }
-                    gSlime.dispose();
-                }
-                if (showBiomeBorders.get()) {
-                    Graphics gBorders = g.create();
-                    gBorders.setColor(Color.BLACK);
-                    gBorders.drawRect(
-                        subImgX,
-                        subImgZ,
-                        subImgWidth,
-                        subImgHeight
-                    );
-                    gBorders.dispose();
-                }
-            }
+//            for (ChunkView view : chunkViewMap.values()) {
+//                if (!viewportBounds.intersects(view.getWorldBounds())) continue;
+//                int blockX = view.getLocation().x * Chunk.CHUNK_SIZE_X;
+//                int blockZ = view.getLocation().z * Chunk.CHUNK_SIZE_Z;
+//
+//                int subImgX = (int) Math.floor((blockX - viewX.get()) * zoom.get() + getWidth()/2d);
+//                int subImgZ = (int) Math.floor((blockZ + viewZ.get()) * zoom.get() + getHeight()/2d);
+//                int subImgWidth = (int) Math.floor(Chunk.CHUNK_SIZE_X * zoom.get());
+//                int subImgHeight = (int) Math.floor(Chunk.CHUNK_SIZE_Z * zoom.get());
+//                g.drawImage(view.getBiomeMapImage(),
+//                    subImgX,
+//                    subImgZ,
+//                    subImgWidth,
+//                    subImgHeight,
+//                    null,
+//                    null);
+//                if (showSlimeChunks.get() && SeedViewer.isSlimeChunk(seedViewer.seed.get(), view.getLocation())) {
+//                    Graphics gSlime = g.create();
+//                    if (slimeVignette == null) {
+//                        gSlime.setColor(new Color(64, 255, 120, 128));
+//                        gSlime.fillRect(
+//                            subImgX,
+//                            subImgZ,
+//                            subImgWidth,
+//                            subImgHeight);
+//                    } else {
+//                        gSlime.drawImage(slimeVignette,
+//                            subImgX,
+//                            subImgZ,
+//                            subImgWidth,
+//                            subImgHeight,
+//                            null, null);
+//                    }
+//                    gSlime.dispose();
+//                }
+//                if (showBiomeBorders.get()) {
+//                    Graphics gBorders = g.create();
+//                    gBorders.setColor(Color.BLACK);
+//                    gBorders.drawRect(
+//                        subImgX,
+//                        subImgZ,
+//                        subImgWidth,
+//                        subImgHeight
+//                    );
+//                    gBorders.dispose();
+//                }
+//            }
             if (showCrosshair.get()) {
                 Graphics gCrosshair = g.create();
                 int centX = getWidth()/2;
@@ -239,6 +238,104 @@ public class Viewport extends JLabel {
                 gCrosshair.fillRect(centX - lineReach, centZ - lineWidth/2, lineReach * 2, lineWidth);
                 gCrosshair.fillRect(centX - lineWidth/2, centZ - lineReach, lineWidth, lineReach * 2);
                 gCrosshair.dispose();
+            }
+        }
+    }
+
+    static class SubFrame extends JLabel {
+        public static final int CHUNKS_X = 16;
+        public static final int CHUNKS_Z = 16;
+        private final @Nullable ChunkView[] chunkViews = new ChunkView[CHUNKS_X * CHUNKS_Z];
+
+        private final Point framePos;
+        private final Viewport viewport;
+
+        public SubFrame(Point framePos, Viewport viewport) {
+            this.framePos = framePos;
+            this.viewport = viewport;
+        }
+
+        public void setChunkView(int x, int z, ChunkView view) {
+            if (x < 0 || x >= 16) {
+                Global.LOGGER.error("X out of range! Skipping!");
+            }
+            if (z < 0 || z >= 16) {
+                Global.LOGGER.error("X out of range! Skipping!");
+            }
+            chunkViews[getArrayIndex(x, z)] = view;
+        }
+
+        public ChunkView getChunkView(int x, int z) {
+            if (x < 0 || x >= 16) {
+                Global.LOGGER.error("X out of range! Skipping!");
+            }
+            if (z < 0 || z >= 16) {
+                Global.LOGGER.error("X out of range! Skipping!");
+            }
+            return chunkViews[getArrayIndex(x, z)];
+        }
+
+        private int getArrayIndex(int x, int z) {
+            return z * CHUNKS_X + x;
+        }
+
+        public void tick() {
+            Rectangle viewportBounds = viewport.getViewportBounds();
+            for (int i = 0; i < chunkViews.length; i++) {
+                ChunkView view = chunkViews[i];
+                if (view == null) continue;
+                if (viewportBounds.intersects(view.getWorldBounds())) {
+                    view.lastSeenTime = System.currentTimeMillis();
+                }
+                if (System.currentTimeMillis() - view.lastSeenTime > MS_UNTIL_CHUNK_UNLOAD) {
+                    chunkViews[i] = null;
+                }
+            }
+
+            Rectangle subFrameBounds = getFrameBounds();
+            ChunkLocation topLeftLocation =
+                new ChunkLocation(subFrameBounds.x/Chunk.CHUNK_SIZE_X,
+                    subFrameBounds.y/Chunk.CHUNK_SIZE_Z);
+            int chunksX = subFrameBounds.width/Chunk.CHUNK_SIZE_X;
+            int chunksZ = subFrameBounds.height/Chunk.CHUNK_SIZE_Z;
+
+            for (int _x = topLeftLocation.x; _x < topLeftLocation.x + chunksX; _x++) {
+                for (int _z = topLeftLocation.z; _z < topLeftLocation.z + chunksZ; _z++) {
+                    int index = getArrayIndex(_x, _z);
+                    if (chunkViews[index] != null) continue;
+                    chunkViews[index] = new ChunkView(new ChunkLocation(_x, _z), viewport.seedViewer.chunkProvider);
+                }
+            }
+        }
+
+        public Rectangle getFrameBounds() {
+            final int blockX = framePos.x * CHUNKS_X * Chunk.CHUNK_SIZE_X;
+            final int blockZ = framePos.y * CHUNKS_Z * Chunk.CHUNK_SIZE_Z;
+            final int width = CHUNKS_X * Chunk.CHUNK_SIZE_X;
+            final int height = CHUNKS_Z * Chunk.CHUNK_SIZE_Z;
+            return new Rectangle(blockX, blockZ, width, height);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Rectangle viewportBounds = viewport.getViewportBounds();
+            for (ChunkView view : chunkViews) {
+                if (view == null ||!viewportBounds.intersects(view.getWorldBounds())) continue;
+                int blockX = view.getLocation().x * Chunk.CHUNK_SIZE_X;
+                int blockZ = view.getLocation().z * Chunk.CHUNK_SIZE_Z;
+
+                int subImgX = (int) Math.floor((blockX) + getWidth() / 2d);
+                int subImgZ = (int) Math.floor((blockZ) + getHeight() / 2d);
+                int subImgWidth = Chunk.CHUNK_SIZE_X;
+                int subImgHeight = Chunk.CHUNK_SIZE_Z;
+                g.drawImage(view.getBiomeMapImage(),
+                    subImgX,
+                    subImgZ,
+                    subImgWidth,
+                    subImgHeight,
+                    null,
+                    null);
             }
         }
     }

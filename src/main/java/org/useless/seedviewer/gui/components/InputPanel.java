@@ -73,7 +73,7 @@ public class InputPanel extends JPanel {
                 }
                 if (boxSeed != seedViewer.seed.get()) {
                     seedViewer.seed.set(boxSeed);
-                    seedViewer.viewport.chunkViewMap.clear();
+                    seedViewer.viewport.chunkFrames.clear();
                     seedViewer.viewport.viewX.set(0F);
                     seedViewer.viewport.viewZ.set(0F);
                     seedViewer.needsResize = true;
