@@ -33,7 +33,6 @@ public class Viewport extends JLabel {
 
     public final Map<ChunkLocation, ChunkView> chunkViewMap = new HashMap<>();
     private final BufferedImage slimeVignette;
-    private BufferedImage biomeImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
 
     public ObjectWrapper<@NotNull Float> zoom = new ObjectWrapper<>(1F);
     public ObjectWrapper<@NotNull Float> viewX = new ObjectWrapper<>(0F);
@@ -95,20 +94,17 @@ public class Viewport extends JLabel {
     }
 
     public void onResize(Rectangle newShape) {
-        biomeImage = new BufferedImage(newShape.width, newShape.height, BufferedImage.TYPE_INT_ARGB);
-
         this.setBounds(newShape.x, newShape.y, newShape.width, newShape.height);
-        this.setIcon(new ImageIcon(biomeImage));
     }
 
     public void tick() {
         final byte OVER_SCAN = 4;
         ChunkLocation topLeftLocation =
             new ChunkLocation(
-                (int) ((-viewX.get() - (biomeImage.getWidth()/(zoom.get() * 2)))/ Chunk.CHUNK_SIZE_X) - OVER_SCAN,
-                (int) ((-viewZ.get() - (biomeImage.getHeight()/(zoom.get() * 2)))/Chunk.CHUNK_SIZE_Z) - OVER_SCAN);
-        int chunksX = (int) Math.ceil(biomeImage.getWidth()/(Chunk.CHUNK_SIZE_X * zoom.get())) + (OVER_SCAN * 2);
-        int chunksZ = (int) Math.ceil(biomeImage.getHeight()/(Chunk.CHUNK_SIZE_Z * zoom.get())) + (OVER_SCAN * 2);
+                (int) ((-viewX.get() - (getWidth()/(zoom.get() * 2)))/ Chunk.CHUNK_SIZE_X) - OVER_SCAN,
+                (int) ((-viewZ.get() - (getHeight()/(zoom.get() * 2)))/Chunk.CHUNK_SIZE_Z) - OVER_SCAN);
+        int chunksX = (int) Math.ceil(getWidth()/(Chunk.CHUNK_SIZE_X * zoom.get())) + (OVER_SCAN * 2);
+        int chunksZ = (int) Math.ceil(getHeight()/(Chunk.CHUNK_SIZE_Z * zoom.get())) + (OVER_SCAN * 2);
 
         Set<ChunkLocation> offScreenLocations = new HashSet<>(chunkViewMap.keySet());
         for (int _x = topLeftLocation.x; _x < topLeftLocation.x + chunksX; _x++) {
@@ -167,8 +163,8 @@ public class Viewport extends JLabel {
                 int blockX = view.getLocation().x * Chunk.CHUNK_SIZE_X;
                 int blockZ = view.getLocation().z * Chunk.CHUNK_SIZE_Z;
 
-                int subImgX = (int) Math.floor((blockX + viewX.get()) * zoom.get() + biomeImage.getWidth()/2d);
-                int subImgZ = (int) Math.floor((blockZ + viewZ.get()) * zoom.get() + biomeImage.getHeight()/2d);
+                int subImgX = (int) Math.floor((blockX + viewX.get()) * zoom.get() + getWidth()/2d);
+                int subImgZ = (int) Math.floor((blockZ + viewZ.get()) * zoom.get() + getHeight()/2d);
                 int subImgWidth = (int) Math.floor(Chunk.CHUNK_SIZE_X * zoom.get());
                 int subImgHeight = (int) Math.floor(Chunk.CHUNK_SIZE_Z * zoom.get());
                 g.drawImage(view.getBiomeMapImage(),
@@ -211,8 +207,8 @@ public class Viewport extends JLabel {
             }
             if (showCrosshair.get()) {
                 Graphics gCrosshair = g.create();
-                int centX = biomeImage.getWidth()/2;
-                int centZ = biomeImage.getHeight()/2;
+                int centX = getWidth()/2;
+                int centZ = getHeight()/2;
                 int lineReach = 10;
                 int lineWidth = 2;
                 gCrosshair.setColor(Color.BLACK);
