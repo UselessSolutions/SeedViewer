@@ -142,7 +142,7 @@ public class SeedViewer extends JFrame {
         {
             int inWidth = screenWidth / 4;
             if (inWidth < 100) inWidth = 100;
-            if (inWidth > 200) inWidth = 200;
+            if (inWidth > 150) inWidth = 150;
             int inHeight = screenHeight - BEZEL * 2;
             infoPanel.onResize(new Rectangle(screenWidth - inWidth, BEZEL, inWidth, inHeight));
             infoPanel.setVisible(true);
@@ -152,7 +152,7 @@ public class SeedViewer extends JFrame {
         {
             int inWidth = screenWidth / 4;
             if (inWidth < 100) inWidth = 100;
-            if (inWidth > 200) inWidth = 200;
+            if (inWidth > 150) inWidth = 150;
             int inHeight = screenHeight - BEZEL * 2;
             inputPanel.onResize(new Rectangle(0, BEZEL, inWidth, inHeight));
             inputPanel.setVisible(true);
