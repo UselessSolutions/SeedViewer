@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "org.useless"
-version = "beta.2"
+version = "beta.3"
 
 val jarIncludes: Configuration by configurations.creating
 
