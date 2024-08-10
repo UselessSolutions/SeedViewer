@@ -28,7 +28,7 @@ import java.util.Set;
 
 public class Viewport extends JLabel {
     public static final long MS_UNTIL_CHUNK_UNLOAD = 5000;
-    public static final int VIEWPORT_CHUNKS_OVERSCAN = 2;
+    public static final int VIEWPORT_CHUNKS_OVERSCAN = 4;
 
     public static final float ZOOM_SENSITIVITY = 0.125f;
     public static final float ZOOM_MIN = 1f;
@@ -136,7 +136,7 @@ public class Viewport extends JLabel {
         final int blockZ = (int) Math.floor((-viewZ.get() - (getHeight()/(zoom.get() * 2))));
         final int widthBlocks = (int) Math.ceil((getWidth()/zoom.get()));
         final int heightBlocks = (int) Math.ceil((getHeight()/zoom.get()));
-        return new Rectangle(blockX - (Chunk.CHUNK_SIZE_X * VIEWPORT_CHUNKS_OVERSCAN), blockZ - (Chunk.CHUNK_SIZE_Z * VIEWPORT_CHUNKS_OVERSCAN), widthBlocks + Chunk.CHUNK_SIZE_X * (VIEWPORT_CHUNKS_OVERSCAN + 1), heightBlocks + Chunk.CHUNK_SIZE_Z * (VIEWPORT_CHUNKS_OVERSCAN + 1));
+        return new Rectangle(blockX - (Chunk.CHUNK_SIZE_X * VIEWPORT_CHUNKS_OVERSCAN), blockZ - (Chunk.CHUNK_SIZE_Z * VIEWPORT_CHUNKS_OVERSCAN), widthBlocks + Chunk.CHUNK_SIZE_X * (VIEWPORT_CHUNKS_OVERSCAN * 2 + 1), heightBlocks + Chunk.CHUNK_SIZE_Z * (VIEWPORT_CHUNKS_OVERSCAN * 2 + 1));
     }
 
     public synchronized void offsetZoom(float delta) {
