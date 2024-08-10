@@ -1,22 +1,33 @@
 package org.useless.seedviewer.gui.components;
 
+import org.useless.seedviewer.Global;
 import org.useless.seedviewer.gui.SeedViewer;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class InputPanel extends JPanel {
+    private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
     private final SeedViewer seedViewer;
+
     public JLabel titleLabel;
 
     public JCheckBox slimeChunksBox;
     public JCheckBox showBordersBox;
     public JCheckBox showCrosshairBox;
     public JTextField seedInputBox;
+    public JButton screenshot;
 
     private final List<Component> resizeList = new ArrayList<>();
 
@@ -72,6 +83,35 @@ public class InputPanel extends JPanel {
 
         this.add(seedInputBox);
         resizeList.add(seedInputBox);
+
+        screenshot = new JButton("Save Screenshot");
+        screenshot.addActionListener(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final File screenShotFolder = new File("screenshots");
+                screenShotFolder.mkdirs();
+                BufferedImage viewportImage = new BufferedImage(seedViewer.viewport.getWidth(), seedViewer.viewport.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                Graphics g = viewportImage.getGraphics();
+                seedViewer.viewport.paintToGraphics(g);
+                g.dispose();
+
+                String name = dateFormat.format(new Date());
+                File destFile;
+                int k = 1;
+                while ((destFile = new File(screenShotFolder, name + (k != 1 ? "_" + k : "") + ".png")).exists()) {
+                    k++;
+                }
+                Global.LOGGER.info("Attempting to save screenshot to '{}'!", destFile);
+                try {
+                    destFile.createNewFile();
+                    ImageIO.write(viewportImage, "png", destFile);
+                } catch (IOException ex) {
+                    Global.LOGGER.error("Failed to save screenshot to '{}'!", destFile, ex);
+                }
+            }
+        });
+        this.add(screenshot);
+        resizeList.add(screenshot);
     }
 
     public void onResize(Rectangle newDimensions) {
@@ -91,8 +131,10 @@ public class InputPanel extends JPanel {
             } else if (c instanceof JTextField) {
                 c.setBounds(padding, lastY, newDimensions.width - padding * 2, textHeight);
                 lastY += textHeight;
+            } else if (c instanceof JButton) {
+                c.setBounds(padding, lastY, newDimensions.width - padding * 2, textHeight);
+                lastY += textHeight;
             }
-
         }
     }
 }

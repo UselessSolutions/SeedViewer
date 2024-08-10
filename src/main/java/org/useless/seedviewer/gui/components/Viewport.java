@@ -158,6 +158,9 @@ public class Viewport extends JLabel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        paintToGraphics(g);
+    }
+    public void paintToGraphics(Graphics g) {
         synchronized (this) {
             for (ChunkView view : chunkViewMap.values()) {
                 int blockX = view.getLocation().x * Chunk.CHUNK_SIZE_X;
