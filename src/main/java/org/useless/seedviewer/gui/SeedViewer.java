@@ -5,12 +5,12 @@ import org.useless.seedviewer.Global;
 import org.useless.seedviewer.collections.ObjectWrapper;
 import org.useless.seedviewer.bta.BTAChunkProvider;
 import org.useless.seedviewer.collections.ChunkLocation;
+import org.useless.seedviewer.gui.components.InputPanel;
 import org.useless.seedviewer.gui.components.Viewport;
 import org.useless.seedviewer.data.Biome;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.util.ArrayList;
@@ -25,30 +25,26 @@ public class SeedViewer extends JFrame {
 
     // Storage
     public final Properties launchProperties;
-    private volatile boolean needsResize = true;
+    public volatile boolean needsResize = true;
 
     // Configuration
     public ChunkProvider chunkProvider;
     public ObjectWrapper<@NotNull Long> seed = new ObjectWrapper<>(100L);
 
     // Components
-    private final Viewport viewport;
+    public final Viewport viewport;
+    public final InputPanel inputPanel;
 
-    private JLabel versionLabel;
     private JLabel seedLabel;
     private JLabel viewLabel;
     private JLabel zoomLabel;
     private JLabel biomeLabel;
-    private JCheckBox slimeChunksBox;
-    private JCheckBox showBordersBox;
-    private JCheckBox showCrosshairBox;
-    private JTextField seedInputBox;
-
 
     public SeedViewer(Properties properties) {
         Global.LOGGER.info("Starting Seed Viewer!");
 
         viewport = new Viewport(this);
+        inputPanel = new InputPanel(this);
 
         this.launchProperties = properties;
         seed.addChangeListener(newValue -> chunkProvider = new BTAChunkProvider(newValue));
@@ -161,41 +157,8 @@ public class SeedViewer extends JFrame {
 
         // Checkboxes
         Global.LOGGER.info("Creating Check boxes");
-        slimeChunksBox = new JCheckBox("Slime Chunks");
-        slimeChunksBox.setSelected(viewport.showSlimeChunks.get());
-        slimeChunksBox.addChangeListener(e -> viewport.showSlimeChunks.set(slimeChunksBox.isSelected()));
-        showBordersBox = new JCheckBox("Chunk Borders");
-        showBordersBox.setSelected(viewport.showBiomeBorders.get());
-        showBordersBox.addChangeListener(e -> viewport.showBiomeBorders.set(showBordersBox.isSelected()));
-        showCrosshairBox = new JCheckBox("Enable Cross-hair");
-        showCrosshairBox.setSelected(viewport.showCrosshair.get());
-        showCrosshairBox.addChangeListener(e -> viewport.showCrosshair.set(showCrosshairBox.isSelected()));
-
-        this.add(slimeChunksBox);
-        this.add(showBordersBox);
-        this.add(showCrosshairBox);
-
-        seedInputBox = new JTextField(seed.toString());
-        seedInputBox.addActionListener(new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                long boxSeed;
-                try {
-                    boxSeed = Long.parseLong(seedInputBox.getText());
-                } catch (NumberFormatException exception) {
-                    boxSeed = seedInputBox.getText().hashCode();
-                }
-                if (boxSeed != seed.get()) {
-                    seed.set(boxSeed);
-                    viewport.chunkViewMap.clear();
-                    viewport.viewX.set(0F);
-                    viewport.viewZ.set(0F);
-                    needsResize = true;
-                }
-            }
-        });
-
-        this.add(seedInputBox);
+        inputPanel.setup();
+        this.add(inputPanel);
 
         Global.LOGGER.info("Creating Image frame");
         viewport.setup();
@@ -211,11 +174,10 @@ public class SeedViewer extends JFrame {
 
         int bWidth = (int) (screenWidth * 0.5f);
         int bHeight = 40;
-        seedInputBox.setBounds((screenWidth - bWidth)/2, screenHeight - bHeight - 15, bWidth, bHeight);
 
         int currLabel = 0;
         int lX = (screenWidth + bWidth)/2 + 20;
-        int lY = screenHeight - bHeight - BEZEL;
+        int lY = screenHeight - bHeight - SeedViewer.BEZEL;
 
         int lHeight = 15;
         seedLabel.setBounds(lX, lY + lHeight * currLabel++, bWidth, lHeight);
@@ -223,15 +185,29 @@ public class SeedViewer extends JFrame {
         zoomLabel.setBounds(lX, lY + lHeight * currLabel++, bWidth, lHeight);
         biomeLabel.setBounds(lX, lY + lHeight * currLabel++, bWidth, lHeight);
 
-        int currBox = 0;
-        slimeChunksBox.setBounds(BEZEL, lY + 15 * currBox++, 200, 15);
-        showBordersBox.setBounds(BEZEL, lY + 15 * currBox++, 200, 15);
-        showCrosshairBox.setBounds(BEZEL, lY + 15 * currBox++, 200, 15);
+        int inWidth = screenWidth / 4;
+        if (inWidth < 100) inWidth = 100;
+        if (inWidth > 200) inWidth = 200;
+        int inHeight = screenHeight - bHeight - BEZEL * 2;
+        inputPanel.onResize(new Rectangle(0, BEZEL, inWidth, inHeight));
+        inputPanel.setVisible(true);
 
-        int imgWidth = screenWidth - (BEZEL * 2);
-        int imgHeight = (screenHeight - bHeight - (BEZEL * 2));
+        if (inputPanel.isVisible()) {
+            viewport.onResize(
+                new Rectangle(
+                    inputPanel.getX() + inputPanel.getWidth() + BEZEL,
+                    BEZEL,
+                    (screenWidth - (inputPanel.getX() + inputPanel.getWidth() + BEZEL)) - BEZEL,
+                    screenHeight - bHeight - BEZEL * 2));
+        } else {
+            viewport.onResize(
+                new Rectangle(
+                    BEZEL,
+                    BEZEL,
+                    screenWidth - (BEZEL * 2),
+                    screenHeight - bHeight - BEZEL * 2));
+        }
 
-        viewport.onResize(new Rectangle(BEZEL, BEZEL, imgWidth, imgHeight));
     }
 
     public synchronized void tick() {
