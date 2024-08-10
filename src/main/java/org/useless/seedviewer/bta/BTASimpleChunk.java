@@ -7,10 +7,10 @@ import org.useless.seedviewer.collections.ChunkPos3D;
 import org.useless.seedviewer.data.Biome;
 import org.useless.seedviewer.data.Chunk;
 
-public class BTAChunk implements Chunk {
+public class BTASimpleChunk implements Chunk {
     private final ChunkLocation location;
     private final BiomeProvider provider;
-    public BTAChunk(ChunkLocation location, BiomeProvider biomeProvider) {
+    public BTASimpleChunk(ChunkLocation location, BiomeProvider biomeProvider) {
         this.location = location;
         provider = biomeProvider;
     }

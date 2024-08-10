@@ -1,6 +1,7 @@
 package org.useless.seedviewer.gui.components;
 
 import org.useless.seedviewer.Global;
+import org.useless.seedviewer.collections.ObjectWrapper;
 import org.useless.seedviewer.gui.SeedViewer;
 
 import javax.imageio.ImageIO;
@@ -28,6 +29,8 @@ public class InputPanel extends JPanel {
     public JCheckBox showCrosshairBox;
     public JTextField seedInputBox;
     public JButton screenshot;
+    public JButton openWorld;
+    public JButton closeWorld;
 
     private final List<Component> resizeList = new ArrayList<>();
 
@@ -108,6 +111,71 @@ public class InputPanel extends JPanel {
         });
         this.add(screenshot);
         resizeList.add(screenshot);
+
+        openWorld = new JButton("Open World");
+        openWorld.addActionListener(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser worldSelector = new JFileChooser(new File("./"));
+
+                worldSelector.setDialogTitle("Select World");
+                worldSelector.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                worldSelector.setAcceptAllFileFilterUsed(false);
+
+                int result = worldSelector.showOpenDialog(seedViewer);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = worldSelector.getSelectedFile();
+                    System.out.println("Selected file: " + selectedFile.getAbsolutePath());
+                    seedViewer.viewport.world.set(selectedFile);
+
+                } else {
+                    seedViewer.viewport.world.set(null);
+                }
+            }
+        });
+        seedViewer.viewport.world.addChangeListener(newValue -> {
+            if (newValue != null) {
+                seedInputBox.setEnabled(false);
+                seedInputBox.setVisible(false);
+
+                closeWorld.setEnabled(true);
+                closeWorld.setVisible(true);
+                seedViewer.forceResize();
+            } else {
+                seedInputBox.setEnabled(true);
+                seedInputBox.setVisible(true);
+
+                closeWorld.setEnabled(false);
+                closeWorld.setVisible(false);
+                seedViewer.forceResize();
+            }
+        });
+        this.add(openWorld);
+        resizeList.add(openWorld);
+
+        closeWorld = new JButton("Close World");
+        closeWorld.addActionListener(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                seedViewer.viewport.world.set(null);
+            }
+        });
+        this.add(closeWorld);
+        resizeList.add(closeWorld);
+
+        if (seedViewer.viewport.world.get() == null) {
+            seedInputBox.setEnabled(true);
+            seedInputBox.setVisible(true);
+
+            closeWorld.setEnabled(false);
+            closeWorld.setVisible(false);
+        } else {
+            seedInputBox.setEnabled(false);
+            seedInputBox.setVisible(false);
+
+            closeWorld.setEnabled(true);
+            closeWorld.setVisible(true);
+        }
     }
 
     public void onResize(Rectangle newDimensions) {
@@ -121,6 +189,7 @@ public class InputPanel extends JPanel {
 
         int lastY = titleLabel.getY() + titleLabel.getHeight() + padding * 2;
         for (Component c : resizeList) {
+            if (!c.isVisible()) continue;
             if (c instanceof JCheckBox) {
                 c.setBounds(padding, lastY, newDimensions.width - padding * 2, boxHeight);
                 lastY += boxHeight;

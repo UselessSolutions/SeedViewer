@@ -1,7 +1,9 @@
 package org.useless.seedviewer.gui.components;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.useless.seedviewer.Global;
+import org.useless.seedviewer.TestChunkProvider;
 import org.useless.seedviewer.bta.BTAChunkProvider;
 import org.useless.seedviewer.collections.ChunkLocation;
 import org.useless.seedviewer.collections.ChunkPos3D;
@@ -21,6 +23,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.event.MouseWheelEvent;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -39,16 +42,17 @@ public class Viewport extends JLabel {
     public final Map<ChunkLocation, ChunkView> chunkViewMap = new HashMap<>();
     private final BufferedImage slimeVignette;
 
-    public ChunkProvider chunkProvider;
-    public ObjectWrapper<@NotNull Long> seed = new ObjectWrapper<>(100L);
+    public ChunkProvider chunkProvider = new TestChunkProvider();
+    public final ObjectWrapper<@NotNull Long> seed = new ObjectWrapper<>(100L);
+    public final ObjectWrapper<@Nullable File> world = new ObjectWrapper<>(null);
 
-    public ObjectWrapper<@NotNull Float> zoom = new ObjectWrapper<>(1F);
-    public ObjectWrapper<@NotNull Float> viewX = new ObjectWrapper<>(0F);
-    public ObjectWrapper<@NotNull Float> viewZ = new ObjectWrapper<>(0F);
+    public final ObjectWrapper<@NotNull Float> zoom = new ObjectWrapper<>(1F);
+    public final ObjectWrapper<@NotNull Float> viewX = new ObjectWrapper<>(0F);
+    public final ObjectWrapper<@NotNull Float> viewZ = new ObjectWrapper<>(0F);
 
-    public ObjectWrapper<@NotNull Boolean> showSlimeChunks = new ObjectWrapper<>(true);
-    public ObjectWrapper<@NotNull Boolean> showBiomeBorders = new ObjectWrapper<>(true);
-    public ObjectWrapper<@NotNull Boolean> showCrosshair = new ObjectWrapper<>(true);
+    public final ObjectWrapper<@NotNull Boolean> showSlimeChunks = new ObjectWrapper<>(true);
+    public final ObjectWrapper<@NotNull Boolean> showBiomeBorders = new ObjectWrapper<>(true);
+    public final ObjectWrapper<@NotNull Boolean> showCrosshair = new ObjectWrapper<>(true);
 
     private final SeedViewer seedViewer;
 
@@ -70,13 +74,11 @@ public class Viewport extends JLabel {
         }
         slimeVignette = _vignette;
 
-        seed.addChangeListener(newValue -> chunkProvider = new BTAChunkProvider(newValue));
         try {
-            seed.set(Long.parseLong(seedViewer.launchProperties.getProperty("seed", "100")));
+            setSeed(Long.parseLong(seedViewer.launchProperties.getProperty("seed", "100")));
         } catch (NumberFormatException ignored){
-            seed.set((long) seedViewer.launchProperties.getProperty("seed", "100").hashCode());
+            setSeed(seedViewer.launchProperties.getProperty("seed", "100").hashCode());
         }
-        chunkProvider = new BTAChunkProvider(seed.get());
     }
 
     public void setup() {
@@ -149,7 +151,17 @@ public class Viewport extends JLabel {
         chunkViewMap.clear();
         viewX.set(0F);
         viewZ.set(0F);
-        seedViewer.needsResize = true;
+        chunkProvider = new BTAChunkProvider(this.seed.get());
+        seedViewer.queueResize();
+    }
+
+    public void setWorld(@Nullable File file) {
+        world.set(file);
+        chunkViewMap.clear();
+        viewX.set(0F);
+        viewZ.set(0F);
+        chunkProvider = new BTAChunkProvider(seed.get());
+        seedViewer.queueResize();
     }
 
     public Rectangle getViewportBounds() {
