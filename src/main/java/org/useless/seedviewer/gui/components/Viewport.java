@@ -85,7 +85,7 @@ public class Viewport extends JLabel {
                     int dy = e.getY() - lastLeftClickPoint.y;
                     lastLeftClickPoint = e.getPoint();
 
-                    offsetView(dx, dy);
+                    offsetView(-dx, dy);
                 }
             }
         });
@@ -101,7 +101,7 @@ public class Viewport extends JLabel {
         final byte OVER_SCAN = 4;
         ChunkLocation topLeftLocation =
             new ChunkLocation(
-                (int) ((-viewX.get() - (getWidth()/(zoom.get() * 2)))/ Chunk.CHUNK_SIZE_X) - OVER_SCAN,
+                (int) ((viewX.get() - (getWidth()/(zoom.get() * 2)))/ Chunk.CHUNK_SIZE_X) - OVER_SCAN,
                 (int) ((-viewZ.get() - (getHeight()/(zoom.get() * 2)))/Chunk.CHUNK_SIZE_Z) - OVER_SCAN);
         int chunksX = (int) Math.ceil(getWidth()/(Chunk.CHUNK_SIZE_X * zoom.get())) + (OVER_SCAN * 2);
         int chunksZ = (int) Math.ceil(getHeight()/(Chunk.CHUNK_SIZE_Z * zoom.get())) + (OVER_SCAN * 2);
@@ -151,8 +151,8 @@ public class Viewport extends JLabel {
     }
 
     public Biome getHoveredBiome() {
-        ChunkLocation chunkLocation = new ChunkLocation((int) Math.floor(-viewX.get()/ Chunk.CHUNK_SIZE_X), (int) Math.floor(-viewZ.get()/ Chunk.CHUNK_SIZE_Z));
-        return seedViewer.chunkProvider.getChunk(chunkLocation).getBiome(new ChunkPos3D(((int) Math.floor(-viewX.get())) - chunkLocation.x * Chunk.CHUNK_SIZE_X, 128, ((int) Math.floor(-viewZ.get())) - chunkLocation.z * Chunk.CHUNK_SIZE_Z));
+        ChunkLocation chunkLocation = new ChunkLocation((int) Math.floor(viewX.get()/ Chunk.CHUNK_SIZE_X), (int) Math.floor(-viewZ.get()/ Chunk.CHUNK_SIZE_Z));
+        return seedViewer.chunkProvider.getChunk(chunkLocation).getBiome(new ChunkPos3D(((int) Math.floor(viewX.get())) - chunkLocation.x * Chunk.CHUNK_SIZE_X, 128, ((int) Math.floor(-viewZ.get())) - chunkLocation.z * Chunk.CHUNK_SIZE_Z));
     }
 
     @Override
@@ -166,7 +166,7 @@ public class Viewport extends JLabel {
                 int blockX = view.getLocation().x * Chunk.CHUNK_SIZE_X;
                 int blockZ = view.getLocation().z * Chunk.CHUNK_SIZE_Z;
 
-                int subImgX = (int) Math.floor((blockX + viewX.get()) * zoom.get() + getWidth()/2d);
+                int subImgX = (int) Math.floor((blockX - viewX.get()) * zoom.get() + getWidth()/2d);
                 int subImgZ = (int) Math.floor((blockZ + viewZ.get()) * zoom.get() + getHeight()/2d);
                 int subImgWidth = (int) Math.floor(Chunk.CHUNK_SIZE_X * zoom.get());
                 int subImgHeight = (int) Math.floor(Chunk.CHUNK_SIZE_Z * zoom.get());
