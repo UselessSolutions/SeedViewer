@@ -74,7 +74,6 @@ public class InputPanel extends JPanel {
     public void onResize(Rectangle newDimensions) {
         setBounds(newDimensions.x, newDimensions.y, newDimensions.width, newDimensions.height);
 
-
         final int boxHeight = 15;
         final int padding = 5;
         final int textHeight = 30;
