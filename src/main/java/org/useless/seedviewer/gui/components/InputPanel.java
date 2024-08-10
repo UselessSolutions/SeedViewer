@@ -61,7 +61,7 @@ public class InputPanel extends JPanel {
         this.add(showCrosshairBox);
         resizeList.add(showCrosshairBox);
 
-        seedInputBox = new JTextField(seedViewer.seed.toString());
+        seedInputBox = new JTextField(seedViewer.viewport.seed.toString());
         seedInputBox.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -71,12 +71,8 @@ public class InputPanel extends JPanel {
                 } catch (NumberFormatException exception) {
                     boxSeed = seedInputBox.getText().hashCode();
                 }
-                if (boxSeed != seedViewer.seed.get()) {
-                    seedViewer.seed.set(boxSeed);
-                    seedViewer.viewport.chunkViewMap.clear();
-                    seedViewer.viewport.viewX.set(0F);
-                    seedViewer.viewport.viewZ.set(0F);
-                    seedViewer.needsResize = true;
+                if (boxSeed != seedViewer.viewport.seed.get()) {
+                    seedViewer.viewport.setSeed(boxSeed);
                 }
             }
         });

@@ -28,8 +28,6 @@ public class SeedViewer extends JFrame {
     public volatile boolean needsResize = true;
 
     // Configuration
-    public ChunkProvider chunkProvider;
-    public ObjectWrapper<@NotNull Long> seed = new ObjectWrapper<>(100L);
 
     // Components
     public final Viewport viewport;
@@ -38,23 +36,16 @@ public class SeedViewer extends JFrame {
 
     public SeedViewer(Properties properties) {
         Global.LOGGER.info("Starting Seed Viewer!");
+        this.launchProperties = properties;
 
         viewport = new Viewport(this);
         inputPanel = new InputPanel(this);
         infoPanel = new InfoPanel(this);
 
-        this.launchProperties = properties;
-        seed.addChangeListener(newValue -> chunkProvider = new BTAChunkProvider(newValue));
-        try {
-            seed.set(Long.parseLong(properties.getProperty("seed", "100")));
-        } catch (NumberFormatException ignored){
-            seed.set((long) properties.getProperty("seed", "100").hashCode());
-        }
 
         initFrame();
         addComponents();
 
-        chunkProvider = new BTAChunkProvider(seed.get());
 
 
         new Thread(

@@ -41,8 +41,8 @@ public class InfoPanel extends JPanel {
         add(btaLabel);
         resizeList.add(btaLabel);
 
-        seedLabel = new JLabel("Seed: " + seedViewer.seed);
-        seedViewer.seed.addChangeListener(newValue -> seedLabel.setText("Seed: " + seedViewer.seed));
+        seedLabel = new JLabel("Seed: " + seedViewer.viewport.seed);
+        seedViewer.viewport.seed.addChangeListener(newValue -> seedLabel.setText("Seed: " + seedViewer.viewport.seed));
 
         viewLabel = new JLabel(String.format("View: X:%s, Z:%s", seedViewer.viewport.viewX, seedViewer.viewport.viewZ));
         seedViewer.viewport.viewX.addChangeListener(newValue -> viewLabel.setText(String.format("View: X:%.2f, Z:%.2f", seedViewer.viewport.viewX.get(), seedViewer.viewport.viewZ.get())));
