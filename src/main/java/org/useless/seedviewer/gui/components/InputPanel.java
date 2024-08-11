@@ -41,30 +41,37 @@ public class InputPanel extends JPanel {
     }
 
     public void setup() {
+        final int boxHeight = 15;
+        final int textHeight = 15;
+        final int textFieldHeight = 30;
+        final int button = 30;
+
         titleLabel = new JLabel("User Controls: ");
+        titleLabel.setSize(0, textHeight);
         this.add(titleLabel);
 
         slimeChunksBox = new JCheckBox("Slime Chunks");
+        slimeChunksBox.setSize(0, boxHeight);
         slimeChunksBox.setSelected(seedViewer.viewport.showSlimeChunks.get());
         slimeChunksBox.addChangeListener(e -> seedViewer.viewport.showSlimeChunks.set(slimeChunksBox.isSelected()));
         slimeChunksBox.addChangeListener(e -> seedViewer.viewport.repaint());
         showBordersBox = new JCheckBox("Chunk Borders");
+        showBordersBox.setSize(0, boxHeight);
         showBordersBox.setSelected(seedViewer.viewport.showBiomeBorders.get());
         showBordersBox.addChangeListener(e -> seedViewer.viewport.showBiomeBorders.set(showBordersBox.isSelected()));
         showBordersBox.addChangeListener(e -> seedViewer.viewport.repaint());
         showCrosshairBox = new JCheckBox("Enable Cross-hair");
+        showCrosshairBox.setSize(0, boxHeight);
         showCrosshairBox.setSelected(seedViewer.viewport.showCrosshair.get());
         showCrosshairBox.addChangeListener(e -> seedViewer.viewport.showCrosshair.set(showCrosshairBox.isSelected()));
         showCrosshairBox.addChangeListener(e -> seedViewer.viewport.repaint());
 
-        this.add(slimeChunksBox);
-        resizeList.add(slimeChunksBox);
-        this.add(showBordersBox);
-        resizeList.add(showBordersBox);
-        this.add(showCrosshairBox);
-        resizeList.add(showCrosshairBox);
+        addManaged(slimeChunksBox);
+        addManaged(showBordersBox);
+        addManaged(showCrosshairBox);
 
         seedInputBox = new JTextField(seedViewer.viewport.seed.toString());
+        seedInputBox.setSize(0, textFieldHeight);
         seedInputBox.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -79,11 +86,10 @@ public class InputPanel extends JPanel {
                 }
             }
         });
-
-        this.add(seedInputBox);
-        resizeList.add(seedInputBox);
+        addManaged(seedInputBox);
 
         screenshot = new JButton("Save Screenshot");
+        screenshot.setSize(0, button);
         screenshot.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -109,10 +115,10 @@ public class InputPanel extends JPanel {
                 }
             }
         });
-        this.add(screenshot);
-        resizeList.add(screenshot);
+        addManaged(screenshot);
 
         openWorld = new JButton("Open World");
+        openWorld.setSize(0, button);
         openWorld.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -150,18 +156,17 @@ public class InputPanel extends JPanel {
                 seedViewer.forceResize();
             }
         });
-        this.add(openWorld);
-        resizeList.add(openWorld);
+        addManaged(openWorld);
 
         closeWorld = new JButton("Close World");
+        closeWorld.setSize(0, button);
         closeWorld.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 seedViewer.viewport.world.set(null);
             }
         });
-        this.add(closeWorld);
-        resizeList.add(closeWorld);
+        addManaged(closeWorld);
 
         if (seedViewer.viewport.world.get() == null) {
             seedInputBox.setEnabled(true);
@@ -178,28 +183,23 @@ public class InputPanel extends JPanel {
         }
     }
 
+    public void addManaged(Component c) {
+        add(c);
+        resizeList.add(c);
+    }
+
     public void onResize(Rectangle newDimensions) {
         setBounds(newDimensions.x, newDimensions.y, newDimensions.width, newDimensions.height);
 
-        final int boxHeight = 15;
-        final int padding = 5;
-        final int textHeight = 30;
+        final int edgePad = 5;
+        final int elementPad = 2;
+        titleLabel.setBounds(edgePad, edgePad, newDimensions.width - edgePad * 2, titleLabel.getHeight());
 
-        titleLabel.setBounds(padding, padding, newDimensions.width - padding * 2, 15);
-
-        int lastY = titleLabel.getY() + titleLabel.getHeight() + padding * 2;
+        int lastY = titleLabel.getY() + titleLabel.getHeight() + edgePad * 2;
         for (Component c : resizeList) {
             if (!c.isVisible()) continue;
-            if (c instanceof JCheckBox) {
-                c.setBounds(padding, lastY, newDimensions.width - padding * 2, boxHeight);
-                lastY += boxHeight;
-            } else if (c instanceof JTextField) {
-                c.setBounds(padding, lastY, newDimensions.width - padding * 2, textHeight);
-                lastY += textHeight;
-            } else if (c instanceof JButton) {
-                c.setBounds(padding, lastY, newDimensions.width - padding * 2, textHeight);
-                lastY += textHeight;
-            }
+            c.setBounds(edgePad, lastY, newDimensions.width - edgePad * 2, c.getHeight());
+            lastY += c.getHeight() + elementPad;
         }
     }
 }
