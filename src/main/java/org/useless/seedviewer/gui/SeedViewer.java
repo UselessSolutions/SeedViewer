@@ -2,8 +2,6 @@ package org.useless.seedviewer.gui;
 
 import org.jetbrains.annotations.NotNull;
 import org.useless.seedviewer.Global;
-import org.useless.seedviewer.collections.ObjectWrapper;
-import org.useless.seedviewer.bta.BTAChunkProvider;
 import org.useless.seedviewer.collections.ChunkLocation;
 import org.useless.seedviewer.gui.components.InfoPanel;
 import org.useless.seedviewer.gui.components.InputPanel;
@@ -25,7 +23,7 @@ public class SeedViewer extends JFrame {
 
     // Storage
     public final Properties launchProperties;
-    public volatile boolean needsResize = true;
+    private volatile boolean needsResize = true;
 
     // Configuration
 
@@ -158,6 +156,15 @@ public class SeedViewer extends JFrame {
                     viewWidth,
                     screenHeight - BEZEL * 2));
         }
+    }
+
+    public void queueResize() {
+        needsResize = true;
+    }
+
+    public void forceResize() {
+        queueResize();
+        initComponents();
     }
 
     public synchronized void tick() {

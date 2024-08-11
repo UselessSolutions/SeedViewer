@@ -25,9 +25,13 @@ public class InputPanel extends JPanel {
 
     public JCheckBox slimeChunksBox;
     public JCheckBox showBordersBox;
+    public JCheckBox showBiomesBox;
+    public JCheckBox showTerrainBox;
     public JCheckBox showCrosshairBox;
     public JTextField seedInputBox;
     public JButton screenshot;
+    public JButton openWorld;
+    public JButton closeWorld;
 
     private final List<Component> resizeList = new ArrayList<>();
 
@@ -38,30 +42,53 @@ public class InputPanel extends JPanel {
     }
 
     public void setup() {
+        final int boxHeight = 15;
+        final int textHeight = 15;
+        final int textFieldHeight = 30;
+        final int button = 30;
+
         titleLabel = new JLabel("User Controls: ");
+        titleLabel.setSize(0, textHeight);
         this.add(titleLabel);
 
         slimeChunksBox = new JCheckBox("Slime Chunks");
+        slimeChunksBox.setSize(0, boxHeight);
         slimeChunksBox.setSelected(seedViewer.viewport.showSlimeChunks.get());
         slimeChunksBox.addChangeListener(e -> seedViewer.viewport.showSlimeChunks.set(slimeChunksBox.isSelected()));
         slimeChunksBox.addChangeListener(e -> seedViewer.viewport.repaint());
+
         showBordersBox = new JCheckBox("Chunk Borders");
-        showBordersBox.setSelected(seedViewer.viewport.showBiomeBorders.get());
-        showBordersBox.addChangeListener(e -> seedViewer.viewport.showBiomeBorders.set(showBordersBox.isSelected()));
+        showBordersBox.setSize(0, boxHeight);
+        showBordersBox.setSelected(seedViewer.viewport.showChunkBorders.get());
+        showBordersBox.addChangeListener(e -> seedViewer.viewport.showChunkBorders.set(showBordersBox.isSelected()));
         showBordersBox.addChangeListener(e -> seedViewer.viewport.repaint());
+
+        showBiomesBox = new JCheckBox("Show Biomes");
+        showBiomesBox.setSize(0, boxHeight);
+        showBiomesBox.setSelected(seedViewer.viewport.showBiomes.get());
+        showBiomesBox.addChangeListener(e -> seedViewer.viewport.showBiomes.set(showBiomesBox.isSelected()));
+        showBiomesBox.addChangeListener(e -> seedViewer.viewport.repaint());
+
+        showTerrainBox = new JCheckBox("Show Terrain");
+        showTerrainBox.setSize(0, boxHeight);
+        showTerrainBox.setSelected(seedViewer.viewport.showTerrain.get());
+        showTerrainBox.addChangeListener(e -> seedViewer.viewport.showTerrain.set(showTerrainBox.isSelected()));
+        showTerrainBox.addChangeListener(e -> seedViewer.viewport.repaint());
+
         showCrosshairBox = new JCheckBox("Enable Cross-hair");
+        showCrosshairBox.setSize(0, boxHeight);
         showCrosshairBox.setSelected(seedViewer.viewport.showCrosshair.get());
         showCrosshairBox.addChangeListener(e -> seedViewer.viewport.showCrosshair.set(showCrosshairBox.isSelected()));
         showCrosshairBox.addChangeListener(e -> seedViewer.viewport.repaint());
 
-        this.add(slimeChunksBox);
-        resizeList.add(slimeChunksBox);
-        this.add(showBordersBox);
-        resizeList.add(showBordersBox);
-        this.add(showCrosshairBox);
-        resizeList.add(showCrosshairBox);
+        addManaged(slimeChunksBox);
+        addManaged(showBordersBox);
+        addManaged(showBiomesBox);
+        addManaged(showTerrainBox);
+        addManaged(showCrosshairBox);
 
         seedInputBox = new JTextField(seedViewer.viewport.seed.toString());
+        seedInputBox.setSize(0, textFieldHeight);
         seedInputBox.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -76,11 +103,10 @@ public class InputPanel extends JPanel {
                 }
             }
         });
-
-        this.add(seedInputBox);
-        resizeList.add(seedInputBox);
+        addManaged(seedInputBox);
 
         screenshot = new JButton("Save Screenshot");
+        screenshot.setSize(0, button);
         screenshot.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -106,31 +132,95 @@ public class InputPanel extends JPanel {
                 }
             }
         });
-        this.add(screenshot);
-        resizeList.add(screenshot);
+        addManaged(screenshot);
+
+        openWorld = new JButton("Open World");
+        openWorld.setSize(0, button);
+        openWorld.addActionListener(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser worldSelector = new JFileChooser(new File("./"));
+
+                worldSelector.setDialogTitle("Select World");
+                worldSelector.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                worldSelector.setAcceptAllFileFilterUsed(false);
+
+                int result = worldSelector.showOpenDialog(seedViewer);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = worldSelector.getSelectedFile();
+                    System.out.println("Selected file: " + selectedFile.getAbsolutePath());
+                    seedViewer.viewport.setWorld(selectedFile);
+
+                } else {
+                    seedViewer.viewport.setWorld(null);
+                }
+            }
+        });
+        seedViewer.viewport.world.addChangeListener(newValue -> {
+            if (newValue != null) {
+                onWorldOpen();
+                seedViewer.queueResize();
+            } else {
+                onWorldClose();
+                seedViewer.queueResize();
+            }
+        });
+        addManaged(openWorld);
+
+        closeWorld = new JButton("Close World");
+        closeWorld.setSize(0, button);
+        closeWorld.addActionListener(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                seedViewer.viewport.setWorld(null);
+            }
+        });
+        addManaged(closeWorld);
+
+        if (seedViewer.viewport.world.get() == null) {
+            onWorldClose();
+        } else {
+            onWorldOpen();
+        }
+    }
+
+    public void onWorldOpen() {
+        seedInputBox.setEnabled(false);
+        seedInputBox.setVisible(false);
+
+        closeWorld.setEnabled(true);
+        closeWorld.setVisible(true);
+        showTerrainBox.setEnabled(true);
+        showTerrainBox.setVisible(true);
+    }
+
+    public void onWorldClose() {
+        seedInputBox.setEnabled(true);
+        seedInputBox.setVisible(true);
+
+        closeWorld.setEnabled(false);
+        closeWorld.setVisible(false);
+        showTerrainBox.setEnabled(false);
+        showTerrainBox.setVisible(false);
+    }
+
+    public void addManaged(Component c) {
+        add(c);
+        resizeList.add(c);
     }
 
     public void onResize(Rectangle newDimensions) {
         setBounds(newDimensions.x, newDimensions.y, newDimensions.width, newDimensions.height);
 
-        final int boxHeight = 15;
-        final int padding = 5;
-        final int textHeight = 30;
+        final int edgePad = 5;
+        final int elementPad = 2;
+        titleLabel.setBounds(edgePad, edgePad, newDimensions.width - edgePad * 2, titleLabel.getHeight());
 
-        titleLabel.setBounds(padding, padding, newDimensions.width - padding * 2, 15);
-
-        int lastY = titleLabel.getY() + titleLabel.getHeight() + padding * 2;
+        int lastY = titleLabel.getY() + titleLabel.getHeight() + edgePad * 2;
         for (Component c : resizeList) {
-            if (c instanceof JCheckBox) {
-                c.setBounds(padding, lastY, newDimensions.width - padding * 2, boxHeight);
-                lastY += boxHeight;
-            } else if (c instanceof JTextField) {
-                c.setBounds(padding, lastY, newDimensions.width - padding * 2, textHeight);
-                lastY += textHeight;
-            } else if (c instanceof JButton) {
-                c.setBounds(padding, lastY, newDimensions.width - padding * 2, textHeight);
-                lastY += textHeight;
-            }
+            if (!c.isVisible()) continue;
+            c.setBounds(edgePad, lastY, newDimensions.width - edgePad * 2, c.getHeight());
+            lastY += c.getHeight() + elementPad;
         }
     }
 }
