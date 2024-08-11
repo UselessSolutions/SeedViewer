@@ -232,6 +232,14 @@ public class Viewport extends JLabel {
             Rectangle viewportBounds = getViewportBounds();
             long seed = world.get() == null ? this.seed.get() : world.get().getSeed();
             for (ChunkView view : chunkViewMap.values()) {
+                if (!view.hasInit()) continue;
+                if (view.hasProcessed()) continue;
+                ChunkLocation up = new ChunkLocation(view.getLocation().x, view.getLocation().z - 1);
+                if (chunkViewMap.containsKey(up) && chunkViewMap.get(up).hasInit()) {
+                    view.process(chunkViewMap.get(up));
+                }
+            }
+            for (ChunkView view : chunkViewMap.values()) {
                 if (!viewportBounds.intersects(view.getWorldBounds())) continue;
                 int blockX = view.getLocation().x * Chunk.CHUNK_SIZE_X;
                 int blockZ = view.getLocation().z * Chunk.CHUNK_SIZE_Z;
