@@ -25,7 +25,7 @@ public class ChunkView {
     public long lastSeenTime = System.currentTimeMillis();
 
     private boolean hasInitialized = false;
-    private boolean hasPostProcessed = false;
+    private volatile boolean hasPostProcessed = false;
 
     public ChunkView(ChunkLocation location, ChunkProvider provider) {
         this.location = location;
@@ -91,35 +91,42 @@ public class ChunkView {
     }
 
     public void process(ChunkView posZ) {
-        for (int x = 0; x < Chunk.CHUNK_SIZE_X; x++) {
-            for (int z = 0; z < Chunk.CHUNK_SIZE_Z; z++) {
-                int lastHeight;
-                if (z == 0) {
-                    lastHeight = posZ.getHeightMapImage().getRGB(x, z + 15);
-                } else {
-                    lastHeight = heightMapImage.getRGB(x, z - 1);
+        synchronized (this) {
+            new Thread(() -> {
+                try {
+                    for (int x = 0; x < Chunk.CHUNK_SIZE_X; x++) {
+                        for (int z = 0; z < Chunk.CHUNK_SIZE_Z; z++) {
+                            int lastHeight;
+                            if (z == 0) {
+                                lastHeight = posZ.getHeightMapImage().getRGB(x, z + 15);
+                            } else {
+                                lastHeight = heightMapImage.getRGB(x, z - 1);
+                            }
+                            int height = heightMapImage.getRGB(x, z);
+                            if (height == lastHeight) {
+                                int current = terrainMapImage.getRGB(x, z);
+                                int shade = 220;
+                                int a = (((current >> 24) & 0xFF) * shade) / 0xFF;
+                                int r = (((current >> 16) & 0xFF) * shade) / 0xFF;
+                                int g = (((current >>  8) & 0xFF) * shade) / 0xFF;
+                                int b = (((current      ) & 0xFF) * shade) / 0xFF;
+                                terrainMapImage.setRGB(x, z, (a << 24 | r << 16 | g << 8 | b));
+                            } else if (height < lastHeight) {
+                                int current = terrainMapImage.getRGB(x, z);
+                                int shade = 180;
+                                int a = (((current >> 24) & 0xFF) * shade) / 0xFF;
+                                int r = (((current >> 16) & 0xFF) * shade) / 0xFF;
+                                int g = (((current >>  8) & 0xFF) * shade) / 0xFF;
+                                int b = (((current      ) & 0xFF) * shade) / 0xFF;
+                                terrainMapImage.setRGB(x, z, (a << 24 | r << 16 | g << 8 | b));
+                            }
+                        }
+                    }
+                } finally {
+                    hasPostProcessed = true;
                 }
-                int height = heightMapImage.getRGB(x, z);
-                if (height == lastHeight) {
-                    int current = terrainMapImage.getRGB(x, z);
-                    int shade = 220;
-                    int a = (((current >> 24) & 0xFF) * shade) / 0xFF;
-                    int r = (((current >> 16) & 0xFF) * shade) / 0xFF;
-                    int g = (((current >>  8) & 0xFF) * shade) / 0xFF;
-                    int b = (((current      ) & 0xFF) * shade) / 0xFF;
-                    terrainMapImage.setRGB(x, z, (a << 24 | r << 16 | g << 8 | b));
-                } else if (height < lastHeight) {
-                    int current = terrainMapImage.getRGB(x, z);
-                    int shade = 180;
-                    int a = (((current >> 24) & 0xFF) * shade) / 0xFF;
-                    int r = (((current >> 16) & 0xFF) * shade) / 0xFF;
-                    int g = (((current >>  8) & 0xFF) * shade) / 0xFF;
-                    int b = (((current      ) & 0xFF) * shade) / 0xFF;
-                    terrainMapImage.setRGB(x, z, (a << 24 | r << 16 | g << 8 | b));
-                }
-            }
+            }).start();
         }
-        hasPostProcessed = true;
     }
 
     private void drawDebugImage() {

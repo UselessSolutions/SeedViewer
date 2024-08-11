@@ -26,6 +26,7 @@ public class InputPanel extends JPanel {
     public JCheckBox slimeChunksBox;
     public JCheckBox showBordersBox;
     public JCheckBox showBiomesBox;
+    public JCheckBox showTerrainBox;
     public JCheckBox showCrosshairBox;
     public JTextField seedInputBox;
     public JButton screenshot;
@@ -64,9 +65,15 @@ public class InputPanel extends JPanel {
 
         showBiomesBox = new JCheckBox("Show Biomes");
         showBiomesBox.setSize(0, boxHeight);
-        showBiomesBox.setSelected(seedViewer.viewport.showBiomesBorders.get());
-        showBiomesBox.addChangeListener(e -> seedViewer.viewport.showBiomesBorders.set(showBiomesBox.isSelected()));
+        showBiomesBox.setSelected(seedViewer.viewport.showBiomes.get());
+        showBiomesBox.addChangeListener(e -> seedViewer.viewport.showBiomes.set(showBiomesBox.isSelected()));
         showBiomesBox.addChangeListener(e -> seedViewer.viewport.repaint());
+
+        showTerrainBox = new JCheckBox("Show Terrain");
+        showTerrainBox.setSize(0, boxHeight);
+        showTerrainBox.setSelected(seedViewer.viewport.showTerrain.get());
+        showTerrainBox.addChangeListener(e -> seedViewer.viewport.showTerrain.set(showTerrainBox.isSelected()));
+        showTerrainBox.addChangeListener(e -> seedViewer.viewport.repaint());
 
         showCrosshairBox = new JCheckBox("Enable Cross-hair");
         showCrosshairBox.setSize(0, boxHeight);
@@ -77,6 +84,7 @@ public class InputPanel extends JPanel {
         addManaged(slimeChunksBox);
         addManaged(showBordersBox);
         addManaged(showBiomesBox);
+        addManaged(showTerrainBox);
         addManaged(showCrosshairBox);
 
         seedInputBox = new JTextField(seedViewer.viewport.seed.toString());
@@ -182,6 +190,8 @@ public class InputPanel extends JPanel {
 
         closeWorld.setEnabled(true);
         closeWorld.setVisible(true);
+        showTerrainBox.setEnabled(true);
+        showTerrainBox.setVisible(true);
     }
 
     public void onWorldClose() {
@@ -190,6 +200,8 @@ public class InputPanel extends JPanel {
 
         closeWorld.setEnabled(false);
         closeWorld.setVisible(false);
+        showTerrainBox.setEnabled(false);
+        showTerrainBox.setVisible(false);
     }
 
     public void addManaged(Component c) {
