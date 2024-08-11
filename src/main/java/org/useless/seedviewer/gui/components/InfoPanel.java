@@ -7,10 +7,14 @@ import org.useless.seedviewer.gui.SeedViewer;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class InfoPanel extends JPanel {
+    private static final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
     private final SeedViewer seedViewer;
     public JLabel titleLabel;
 
@@ -19,6 +23,10 @@ public class InfoPanel extends JPanel {
     public JLabel viewLabel;
     public JLabel zoomLabel;
     public JLabel biomeLabel;
+
+    public JLabel worldNameLabel;
+    public JLabel worldSeedLabel;
+    public JLabel worldPlayedLabel;
 
     public List<Component> resizeList = new ArrayList<>();
 
@@ -29,7 +37,10 @@ public class InfoPanel extends JPanel {
     }
 
     public void setup() {
+        final int textHeight = 15;
+
         titleLabel = new JLabel("Information: ");
+        titleLabel.setSize(0, textHeight);
         this.add(titleLabel);
 
         try {
@@ -41,10 +52,12 @@ public class InfoPanel extends JPanel {
         add(btaLabel);
         resizeList.add(btaLabel);
 
-        seedLabel = new JLabel("Seed: " + seedViewer.seed);
-        seedViewer.seed.addChangeListener(newValue -> seedLabel.setText("Seed: " + seedViewer.seed));
+        seedLabel = new JLabel("Seed: " + seedViewer.viewport.seed);
+        seedLabel.setSize(0, textHeight);
+        seedViewer.viewport.seed.addChangeListener(newValue -> seedLabel.setText("Seed: " + seedViewer.viewport.seed));
 
         viewLabel = new JLabel(String.format("View: X:%s, Z:%s", seedViewer.viewport.viewX, seedViewer.viewport.viewZ));
+        viewLabel.setSize(0, textHeight);
         seedViewer.viewport.viewX.addChangeListener(newValue -> viewLabel.setText(String.format("View: X:%.2f, Z:%.2f", seedViewer.viewport.viewX.get(), seedViewer.viewport.viewZ.get())));
         seedViewer.viewport.viewX.addChangeListener(newValue -> {
             Biome b = seedViewer.viewport.getHoveredBiome();
@@ -65,38 +78,89 @@ public class InfoPanel extends JPanel {
         });
 
         zoomLabel = new JLabel("Zoom: " + seedViewer.viewport.zoom);
+        zoomLabel.setSize(0, textHeight);
         seedViewer.viewport.zoom.addChangeListener(newValue -> zoomLabel.setText("Zoom: " + seedViewer.viewport.zoom));
 
         biomeLabel = new JLabel("Biome: None");
+        biomeLabel.setSize(0, textHeight);
 
-        this.add(seedLabel);
-        resizeList.add(seedLabel);
-        this.add(viewLabel);
-        resizeList.add(viewLabel);
-        this.add(zoomLabel);
-        resizeList.add(zoomLabel);
-        this.add(biomeLabel);
-        resizeList.add(biomeLabel);
+        worldNameLabel = new JLabel();
+        worldNameLabel.setSize(0, textHeight);
+        seedViewer.viewport.world.addChangeListener(newValue -> worldNameLabel.setText("World: " + (seedViewer.viewport.world.get() == null ? "null" : seedViewer.viewport.world.get().getName())));
+        seedViewer.viewport.world.addChangeListener(newValue -> {
+            if (newValue != null) {
+                onWorldOpen();
+                seedViewer.queueResize();
+            } else {
+                onWorldClose();
+                seedViewer.queueResize();
+            }
+        });
+
+        worldSeedLabel = new JLabel();
+        worldSeedLabel.setSize(0, textHeight);
+        seedViewer.viewport.world.addChangeListener(newValue -> worldSeedLabel.setText("Seed: " + (seedViewer.viewport.world.get() == null ? "null" : seedViewer.viewport.world.get().getSeed())));
+
+        worldPlayedLabel = new JLabel();
+        worldPlayedLabel.setSize(0, textHeight);
+        seedViewer.viewport.world.addChangeListener(newValue -> worldPlayedLabel.setText("Last Played: " + (seedViewer.viewport.world.get() == null ? "?" : DateFormat.getDateTimeInstance().format(new Date(seedViewer.viewport.world.get().getLastPlayed())))));
+
+        addManaged(seedLabel);
+        addManaged(viewLabel);
+        addManaged(zoomLabel);
+        addManaged(biomeLabel);
+        addManaged(worldNameLabel);
+        addManaged(worldSeedLabel);
+        addManaged(worldPlayedLabel);
+
+        if (seedViewer.viewport.world.get() == null) {
+            onWorldClose();
+        } else {
+            onWorldOpen();
+        }
+    }
+
+    public void addManaged(Component c) {
+        add(c);
+        resizeList.add(c);
+    }
+
+    public void onWorldOpen() {
+        worldNameLabel.setEnabled(true);
+        worldNameLabel.setVisible(true);
+        worldSeedLabel.setEnabled(true);
+        worldSeedLabel.setVisible(true);
+        worldPlayedLabel.setEnabled(true);
+        worldPlayedLabel.setVisible(true);
+
+        seedLabel.setEnabled(false);
+        seedLabel.setVisible(false);
+    }
+
+    public void onWorldClose() {
+        worldNameLabel.setEnabled(false);
+        worldNameLabel.setVisible(false);
+        worldSeedLabel.setEnabled(false);
+        worldSeedLabel.setVisible(false);
+        worldPlayedLabel.setEnabled(false);
+        worldPlayedLabel.setVisible(false);
+
+        seedLabel.setEnabled(true);
+        seedLabel.setVisible(true);
     }
 
     public void onResize(Rectangle newDimensions) {
         setBounds(newDimensions.x, newDimensions.y, newDimensions.width, newDimensions.height);
 
-        final int boxHeight = 15;
-        final int padding = 5;
-        final int textHeight = 15;
-        titleLabel.setBounds(padding, padding, newDimensions.width - padding * 2, 15);
+        final int edgePad = 5;
+        final int elementPad = 2;
+        titleLabel.setBounds(edgePad, edgePad, newDimensions.width - edgePad * 2, titleLabel.getHeight());
 
-        int lastY = titleLabel.getY() + titleLabel.getHeight() + padding * 2;
+        int lastY = titleLabel.getY() + titleLabel.getHeight() + edgePad * 2;
         for (Component c : resizeList) {
-            if (c instanceof JCheckBox) {
-                c.setBounds(padding, lastY, newDimensions.width - padding * 2, boxHeight);
-                lastY += boxHeight;
-            } else if (c instanceof JTextField || c instanceof JLabel) {
-                c.setBounds(padding, lastY, newDimensions.width - padding * 2, textHeight);
-                lastY += textHeight;
-            }
-
+            if (!c.isVisible()) continue;
+            c.setBounds(edgePad, lastY, newDimensions.width - edgePad * 2, c.getHeight());
+            lastY += c.getHeight() + elementPad;
         }
     }
 }
