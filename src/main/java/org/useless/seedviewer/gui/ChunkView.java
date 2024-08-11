@@ -42,30 +42,37 @@ public class ChunkView {
                 inProgressChunks.incrementAndGet();
                 try {
                     Chunk chunk = provider.getChunk(location);
-                    Graphics g = biomeMapImage.getGraphics();
-                    g.setColor(new Color(1, 1, 1, 0));
-                    g.fillRect(0, 0, Chunk.CHUNK_SIZE_X, Chunk.CHUNK_SIZE_Z);
+
+                    Graphics terrain = terrainMapImage.getGraphics();
+                    Graphics biome = biomeMapImage.getGraphics();
+                    Graphics height = heightMapImage.getGraphics();
+                    terrain.setColor(new Color(1, 1, 1, 0));
+                    terrain.fillRect(0, 0, Chunk.CHUNK_SIZE_X, Chunk.CHUNK_SIZE_Z);
+                    biome.setColor(new Color(1, 1, 1, 0));
+                    biome.fillRect(0, 0, Chunk.CHUNK_SIZE_X, Chunk.CHUNK_SIZE_Z);
+                    height.setColor(new Color(1, 1, 1, 0));
+                    height.fillRect(0, 0, Chunk.CHUNK_SIZE_X, Chunk.CHUNK_SIZE_Z);
                     for (int x = 0; x < Chunk.CHUNK_SIZE_X; x++) {
                         for (int z = 0; z < Chunk.CHUNK_SIZE_Z; z++) {
-                            Biome b = chunk.getBiome(new ChunkPos3D(x, 128, z));
-                            Color c = new Color(b.getColor());
-                            c = new Color(c.getRed(), c.getGreen(), c.getBlue(), 128);
-                            g.setColor(c);
-                            g.fillRect(x * RESOLUTION_SCALE, z * RESOLUTION_SCALE, RESOLUTION_SCALE, RESOLUTION_SCALE);
+                            ChunkPos2D pos2D = new ChunkPos2D(x, z);
+                            int h = chunk.getHeight(pos2D) - 1;
+                            height.setColor(new Color(h, h, h));
+                            height.fillRect(x * RESOLUTION_SCALE, z * RESOLUTION_SCALE, RESOLUTION_SCALE, RESOLUTION_SCALE);
+
+                            Biome b = chunk.getBiome(new ChunkPos3D(x, h, z));
+                            Color biomeColor = new Color(b.getColor());
+                            biomeColor = new Color(biomeColor.getRed(), biomeColor.getGreen(), biomeColor.getBlue(), 128);
+                            biome.setColor(biomeColor);
+                            biome.fillRect(x * RESOLUTION_SCALE, z * RESOLUTION_SCALE, RESOLUTION_SCALE, RESOLUTION_SCALE);
+
+                            Color c = chunk.getBlockColor(new ChunkPos3D(x, h, z));
+                            terrain.setColor(c);
+                            terrain.fillRect(x * RESOLUTION_SCALE, z * RESOLUTION_SCALE, RESOLUTION_SCALE, RESOLUTION_SCALE);
                         }
                     }
-                    g.dispose();
-                    Graphics g2 = terrainMapImage.getGraphics();
-                    g2.setColor(new Color(1, 1, 1, 0));
-                    g2.fillRect(0, 0, Chunk.CHUNK_SIZE_X, Chunk.CHUNK_SIZE_Z);
-                    for (int x = 0; x < Chunk.CHUNK_SIZE_X; x++) {
-                        for (int z = 0; z < Chunk.CHUNK_SIZE_Z; z++) {
-                            Color c = chunk.getBlockColor(new ChunkPos3D(x, chunk.getHeight(new ChunkPos2D(x, z)) - 1, z));
-                            g2.setColor(c);
-                            g2.fillRect(x * RESOLUTION_SCALE, z * RESOLUTION_SCALE, RESOLUTION_SCALE, RESOLUTION_SCALE);
-                        }
-                    }
-                    g2.dispose();
+                    terrain.dispose();
+                    biome.dispose();
+                    height.dispose();
                 } finally {
                     inProgressChunks.decrementAndGet();
                 }
