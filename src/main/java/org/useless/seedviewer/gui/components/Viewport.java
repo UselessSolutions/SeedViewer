@@ -230,9 +230,19 @@ public class Viewport extends JLabel {
         chunkViewMap.remove(location);
     }
 
-    public Biome getHoveredBiome() {
+    private ChunkLocation lastHoveredLocation = null;
+    private Chunk lastHoveredChunk = null;
+    public synchronized Biome getHoveredBiome() {
         ChunkLocation chunkLocation = new ChunkLocation((int) Math.floor(viewX.get()/ Chunk.CHUNK_SIZE_X), (int) Math.floor(-viewZ.get()/ Chunk.CHUNK_SIZE_Z));
-        return chunkProvider.getChunk(chunkLocation).getBiome(new ChunkPos3D(((int) Math.floor(viewX.get())) - chunkLocation.x * Chunk.CHUNK_SIZE_X, 128, ((int) Math.floor(-viewZ.get())) - chunkLocation.z * Chunk.CHUNK_SIZE_Z));
+        Chunk chunk;
+        if (lastHoveredLocation != null && lastHoveredChunk != null && lastHoveredLocation.equals(chunkLocation)) {
+            chunk = lastHoveredChunk;
+        } else {
+            chunk = chunkProvider.getChunk(chunkLocation);
+            lastHoveredChunk = chunk;
+            lastHoveredLocation = chunkLocation;
+        }
+        return chunk.getBiome(new ChunkPos3D(((int) Math.floor(viewX.get())) - chunkLocation.x * Chunk.CHUNK_SIZE_X, 128, ((int) Math.floor(-viewZ.get())) - chunkLocation.z * Chunk.CHUNK_SIZE_Z));
     }
 
     @Override
