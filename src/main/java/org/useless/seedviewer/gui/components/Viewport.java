@@ -35,8 +35,9 @@ import java.util.Objects;
 import java.util.Set;
 
 public class Viewport extends JLabel {
-    public static final long MS_UNTIL_CHUNK_UNLOAD = 5000;
+    public static final long MS_UNTIL_CHUNK_UNLOAD = 10_000;
     public static final int VIEWPORT_CHUNKS_OVERSCAN = 4;
+    public static final int VIEWPORT_CACHED_OVERSCAN = 30;
 
     public static final float ZOOM_SENSITIVITY = 0.125f;
     public static final float ZOOM_MIN = 1f;
@@ -49,9 +50,9 @@ public class Viewport extends JLabel {
     public final ObjectWrapper<@NotNull Long> seed = new ObjectWrapper<>(100L);
     public final ObjectWrapper<@Nullable World> world = new ObjectWrapper<>(null);
 
-    public final ObjectWrapper<@NotNull Float> zoom = new ObjectWrapper<>(1F);
-    public final ObjectWrapper<@NotNull Float> viewX = new ObjectWrapper<>(0F);
-    public final ObjectWrapper<@NotNull Float> viewZ = new ObjectWrapper<>(0F);
+    public final ObjectWrapper<@NotNull Double> zoom = new ObjectWrapper<>(1D);
+    public final ObjectWrapper<@NotNull Double> viewX = new ObjectWrapper<>(0D);
+    public final ObjectWrapper<@NotNull Double> viewZ = new ObjectWrapper<>(0D);
 
     public final ObjectWrapper<@NotNull Boolean> showSlimeChunks = new ObjectWrapper<>(true);
     public final ObjectWrapper<@NotNull Boolean> showChunkBorders = new ObjectWrapper<>(true);
@@ -122,9 +123,14 @@ public class Viewport extends JLabel {
 
     public void tick() {
         Rectangle viewportBounds = getViewportBounds();
+        Rectangle cullBounds = new Rectangle(
+            viewportBounds.x - VIEWPORT_CACHED_OVERSCAN,
+            viewportBounds.y - VIEWPORT_CACHED_OVERSCAN,
+            viewportBounds.width + VIEWPORT_CACHED_OVERSCAN * 2,
+            viewportBounds.height + VIEWPORT_CACHED_OVERSCAN * 2);
         Set<ChunkLocation> removalQueue = new HashSet<>();
         for (ChunkView view : chunkViewMap.values()) {
-            if (viewportBounds.intersects(view.getWorldBounds())) {
+            if (cullBounds.intersects(view.getWorldBounds())) {
                 view.lastSeenTime = System.currentTimeMillis();
             }
             if (System.currentTimeMillis() - view.lastSeenTime > MS_UNTIL_CHUNK_UNLOAD) {
@@ -166,8 +172,8 @@ public class Viewport extends JLabel {
     public void setSeed(long seed) {
         this.seed.set(seed);
         chunkViewMap.clear();
-        viewX.set(0F);
-        viewZ.set(0F);
+        viewX.set(0D);
+        viewZ.set(0D);
         chunkProvider = new BTAChunkProvider(this.seed.get());
         seedViewer.queueResize();
     }
@@ -188,8 +194,8 @@ public class Viewport extends JLabel {
         }
 
         chunkViewMap.clear();
-        viewX.set(0F);
-        viewZ.set(0F);
+        viewX.set(0D);
+        viewZ.set(0D);
         seedViewer.queueResize();
     }
 
@@ -201,22 +207,22 @@ public class Viewport extends JLabel {
         return new Rectangle(blockX - (Chunk.CHUNK_SIZE_X * VIEWPORT_CHUNKS_OVERSCAN), blockZ - (Chunk.CHUNK_SIZE_Z * VIEWPORT_CHUNKS_OVERSCAN), widthBlocks + Chunk.CHUNK_SIZE_X * (VIEWPORT_CHUNKS_OVERSCAN * 2 + 1), heightBlocks + Chunk.CHUNK_SIZE_Z * (VIEWPORT_CHUNKS_OVERSCAN * 2 + 1));
     }
 
-    public synchronized void offsetZoom(float delta) {
+    public synchronized void offsetZoom(double delta) {
         setZoom(zoom.get() + delta);
     }
 
-    public synchronized void setZoom(float newZoom) {
+    public synchronized void setZoom(double newZoom) {
         if (newZoom < Viewport.ZOOM_MIN) newZoom = Viewport.ZOOM_MIN;
         if (newZoom > Viewport.ZOOM_MAX) newZoom = Viewport.ZOOM_MAX;
         zoom.set(newZoom);
         repaint();
     }
 
-    public synchronized void offsetView(float deltaX, float deltaZ) {
+    public synchronized void offsetView(double deltaX, double deltaZ) {
         setOffsetView(viewX.get() + (deltaX / zoom.get()), viewZ.get() + (deltaZ / zoom.get()));
     }
 
-    public synchronized void setOffsetView(float newX, float newZ) {
+    public synchronized void setOffsetView(double newX, double newZ) {
         viewX.set(newX);
         viewZ.set(newZ);
         repaint();
