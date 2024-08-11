@@ -2,6 +2,7 @@ package org.useless.seedviewer.gui;
 
 import org.useless.seedviewer.Global;
 import org.useless.seedviewer.collections.ChunkLocation;
+import org.useless.seedviewer.collections.ChunkPos2D;
 import org.useless.seedviewer.collections.ChunkPos3D;
 import org.useless.seedviewer.data.Biome;
 import org.useless.seedviewer.data.Chunk;
@@ -16,6 +17,7 @@ public class ChunkView {
 
     private final int RESOLUTION_SCALE = 1;
     private final BufferedImage biomeMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X * RESOLUTION_SCALE, Chunk.CHUNK_SIZE_Z * RESOLUTION_SCALE, BufferedImage.TYPE_INT_ARGB);
+    private final BufferedImage terrainMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X * RESOLUTION_SCALE, Chunk.CHUNK_SIZE_Z * RESOLUTION_SCALE, BufferedImage.TYPE_INT_ARGB);
     private final BufferedImage heightMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X * RESOLUTION_SCALE, Chunk.CHUNK_SIZE_Z * RESOLUTION_SCALE, BufferedImage.TYPE_INT_ARGB);
     private final ChunkLocation location;
     private final ChunkProvider provider;
@@ -49,6 +51,14 @@ public class ChunkView {
                             g2.dispose();
                         }
                     }
+                    for (int x = 0; x < Chunk.CHUNK_SIZE_X; x++) {
+                        for (int z = 0; z < Chunk.CHUNK_SIZE_Z; z++) {
+                            Graphics g2 = terrainMapImage.getGraphics();
+                            g2.setColor(chunk.getBlockColor(new ChunkPos3D(x, chunk.getHeight(new ChunkPos2D(x, z)) - 1, z)));
+                            g2.fillRect(x * RESOLUTION_SCALE, z * RESOLUTION_SCALE, RESOLUTION_SCALE, RESOLUTION_SCALE);
+                            g2.dispose();
+                        }
+                    }
                 } finally {
                     inProgressChunks.decrementAndGet();
                 }
@@ -76,6 +86,10 @@ public class ChunkView {
 
     public BufferedImage getBiomeMapImage() {
         return biomeMapImage;
+    }
+
+    public BufferedImage getTerrainMapImage() {
+        return terrainMapImage;
     }
 
     public BufferedImage getHeightMapImage() {

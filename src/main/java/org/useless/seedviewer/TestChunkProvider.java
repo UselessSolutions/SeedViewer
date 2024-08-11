@@ -8,6 +8,8 @@ import org.useless.seedviewer.data.Biome;
 import org.useless.seedviewer.data.Chunk;
 import org.useless.seedviewer.gui.ChunkProvider;
 
+import java.awt.*;
+
 public class TestChunkProvider implements ChunkProvider {
     @Override
     public Chunk getChunk(ChunkLocation location) {
@@ -33,6 +35,11 @@ public class TestChunkProvider implements ChunkProvider {
                         return r << 16 | g << 8 | b;
                     }
                 };
+            }
+
+            @Override
+            public Color getBlockColor(ChunkPos3D pos) {
+                return null;
             }
 
             @Override

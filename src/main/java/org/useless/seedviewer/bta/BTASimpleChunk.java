@@ -7,6 +7,8 @@ import org.useless.seedviewer.collections.ChunkPos3D;
 import org.useless.seedviewer.data.Biome;
 import org.useless.seedviewer.data.Chunk;
 
+import java.awt.*;
+
 public class BTASimpleChunk implements Chunk {
     private final ChunkLocation location;
     private final BiomeProvider provider;
@@ -17,6 +19,11 @@ public class BTASimpleChunk implements Chunk {
     @Override
     public Biome getBiome(ChunkPos3D pos) {
         return new BTABiome(provider.getBiome(location.x * Chunk.CHUNK_SIZE_X + pos.x, pos.y, location.z * Chunk.CHUNK_SIZE_Z + pos.z));
+    }
+
+    @Override
+    public Color getBlockColor(ChunkPos3D pos) {
+        return null;
     }
 
     @Override

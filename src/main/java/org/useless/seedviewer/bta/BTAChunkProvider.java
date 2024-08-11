@@ -16,11 +16,13 @@ import net.minecraft.core.world.save.LevelStorage;
 import net.minecraft.core.world.save.SaveFormatBase;
 import net.minecraft.core.world.save.mcregion.SaveFormat19134;
 import net.minecraft.core.world.type.WorldTypes;
+import org.useless.seedviewer.bta.worldloader.ChunkLoader;
 import org.useless.seedviewer.gui.ChunkProvider;
 import org.useless.seedviewer.collections.ChunkLocation;
 import org.useless.seedviewer.data.Chunk;
 
 import java.io.File;
+import java.io.IOException;
 
 public class BTAChunkProvider implements ChunkProvider {
     static {
@@ -33,21 +35,29 @@ public class BTAChunkProvider implements ChunkProvider {
         BiomeProviderOverworld.init();
         I18n.initialize("en_US");
     }
-    public static File worldDir = new File(Global.accessor.getMinecraftDir(), "saves");
-    World world = null;
-    BiomeProvider biomeProvider = null;
+
+    ChunkLoader chunkLoader = null;
+    private final BiomeProvider biomeProvider;
     public BTAChunkProvider(long seed) {
         biomeProvider = new BiomeProviderOverworld(seed, WorldTypes.OVERWORLD_EXTENDED);
     }
 
     public BTAChunkProvider(File worldFolder, LevelData data) {
-        SaveFormatBase saveFormat = new SaveFormat19134(worldFolder.getParentFile());
-        LevelStorage saveHandler = saveFormat.getSaveHandler(worldFolder.getName(), false);
-        World world = new World(saveHandler, saveHandler.getLevelData().getWorldName(), saveHandler.getLevelData().getRandomSeed(), null, null);
-        biomeProvider = world.worldType.createBiomeProvider(world);
+        biomeProvider = new BiomeProviderOverworld(data.getRandomSeed(), WorldTypes.OVERWORLD_EXTENDED);
+        chunkLoader = new ChunkLoader(worldFolder, 0);
     }
     @Override
     public Chunk getChunk(ChunkLocation location) {
+        if (chunkLoader != null) {
+            try {
+                net.minecraft.core.world.chunk.Chunk c = chunkLoader.loadChunk(location);
+                if (c != null) {
+                    return new BTAComplexChunk(c);
+                }
+            } catch (IOException e) {
+                org.useless.seedviewer.Global.LOGGER.error("Failed to load chunk data for chunk {}, {}", location.x, location.z, e);
+            }
+        }
         return new BTASimpleChunk(location, biomeProvider);
     }
 }

@@ -239,7 +239,7 @@ public class Viewport extends JLabel {
                 int subImgZ = (int) Math.floor((blockZ + viewZ.get()) * zoom.get() + getHeight()/2d);
                 int subImgWidth = (int) Math.floor(Chunk.CHUNK_SIZE_X * zoom.get());
                 int subImgHeight = (int) Math.floor(Chunk.CHUNK_SIZE_Z * zoom.get());
-                g.drawImage(view.getBiomeMapImage(),
+                g.drawImage(view.getTerrainMapImage(),
                     subImgX,
                     subImgZ,
                     subImgWidth,
