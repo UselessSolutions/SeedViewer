@@ -5,11 +5,13 @@ import org.jetbrains.annotations.Nullable;
 import org.useless.seedviewer.Global;
 import org.useless.seedviewer.TestChunkProvider;
 import org.useless.seedviewer.bta.BTAChunkProvider;
+import org.useless.seedviewer.bta.BTAWorld;
 import org.useless.seedviewer.collections.ChunkLocation;
 import org.useless.seedviewer.collections.ChunkPos3D;
 import org.useless.seedviewer.collections.ObjectWrapper;
 import org.useless.seedviewer.data.Biome;
 import org.useless.seedviewer.data.Chunk;
+import org.useless.seedviewer.data.World;
 import org.useless.seedviewer.gui.ChunkProvider;
 import org.useless.seedviewer.gui.ChunkView;
 import org.useless.seedviewer.gui.SeedViewer;
@@ -29,6 +31,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class Viewport extends JLabel {
@@ -44,7 +47,7 @@ public class Viewport extends JLabel {
 
     public ChunkProvider chunkProvider = new TestChunkProvider();
     public final ObjectWrapper<@NotNull Long> seed = new ObjectWrapper<>(100L);
-    public final ObjectWrapper<@Nullable File> world = new ObjectWrapper<>(null);
+    public final ObjectWrapper<@Nullable World> world = new ObjectWrapper<>(null);
 
     public final ObjectWrapper<@NotNull Float> zoom = new ObjectWrapper<>(1F);
     public final ObjectWrapper<@NotNull Float> viewX = new ObjectWrapper<>(0F);
@@ -156,11 +159,23 @@ public class Viewport extends JLabel {
     }
 
     public void setWorld(@Nullable File file) {
-        world.set(file);
+        if (file != null) {
+            try {
+                world.set(new BTAWorld(file));
+                chunkProvider = Objects.requireNonNull(world.get()).getChunkProvider();
+            } catch (Exception e) {
+                Global.LOGGER.error("", e);
+                world.set(null);
+                chunkProvider = new BTAChunkProvider(seed.get());
+            }
+        } else {
+            world.set(null);
+            chunkProvider = new BTAChunkProvider(seed.get());
+        }
+
         chunkViewMap.clear();
         viewX.set(0F);
         viewZ.set(0F);
-        chunkProvider = new BTAChunkProvider(seed.get());
         seedViewer.queueResize();
     }
 
@@ -214,6 +229,7 @@ public class Viewport extends JLabel {
     public void paintToGraphics(Graphics g) {
         synchronized (this) {
             Rectangle viewportBounds = getViewportBounds();
+            long seed = world.get() == null ? this.seed.get() : world.get().getSeed();
             for (ChunkView view : chunkViewMap.values()) {
                 if (!viewportBounds.intersects(view.getWorldBounds())) continue;
                 int blockX = view.getLocation().x * Chunk.CHUNK_SIZE_X;
@@ -230,7 +246,7 @@ public class Viewport extends JLabel {
                     subImgHeight,
                     null,
                     null);
-                if (showSlimeChunks.get() && SeedViewer.isSlimeChunk(seed.get(), view.getLocation())) {
+                if (showSlimeChunks.get() && SeedViewer.isSlimeChunk(seed, view.getLocation())) {
                     Graphics gSlime = g.create();
                     if (slimeVignette == null) {
                         gSlime.setColor(new Color(64, 255, 120, 128));

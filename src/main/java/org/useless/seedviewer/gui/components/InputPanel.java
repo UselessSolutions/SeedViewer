@@ -132,28 +132,20 @@ public class InputPanel extends JPanel {
                 if (result == JFileChooser.APPROVE_OPTION) {
                     File selectedFile = worldSelector.getSelectedFile();
                     System.out.println("Selected file: " + selectedFile.getAbsolutePath());
-                    seedViewer.viewport.world.set(selectedFile);
+                    seedViewer.viewport.setWorld(selectedFile);
 
                 } else {
-                    seedViewer.viewport.world.set(null);
+                    seedViewer.viewport.setWorld(null);
                 }
             }
         });
         seedViewer.viewport.world.addChangeListener(newValue -> {
             if (newValue != null) {
-                seedInputBox.setEnabled(false);
-                seedInputBox.setVisible(false);
-
-                closeWorld.setEnabled(true);
-                closeWorld.setVisible(true);
-                seedViewer.forceResize();
+                onWorldOpen();
+                seedViewer.queueResize();
             } else {
-                seedInputBox.setEnabled(true);
-                seedInputBox.setVisible(true);
-
-                closeWorld.setEnabled(false);
-                closeWorld.setVisible(false);
-                seedViewer.forceResize();
+                onWorldClose();
+                seedViewer.queueResize();
             }
         });
         addManaged(openWorld);
@@ -163,24 +155,32 @@ public class InputPanel extends JPanel {
         closeWorld.addActionListener(new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                seedViewer.viewport.world.set(null);
+                seedViewer.viewport.setWorld(null);
             }
         });
         addManaged(closeWorld);
 
         if (seedViewer.viewport.world.get() == null) {
-            seedInputBox.setEnabled(true);
-            seedInputBox.setVisible(true);
-
-            closeWorld.setEnabled(false);
-            closeWorld.setVisible(false);
+            onWorldClose();
         } else {
-            seedInputBox.setEnabled(false);
-            seedInputBox.setVisible(false);
-
-            closeWorld.setEnabled(true);
-            closeWorld.setVisible(true);
+            onWorldOpen();
         }
+    }
+
+    public void onWorldOpen() {
+        seedInputBox.setEnabled(false);
+        seedInputBox.setVisible(false);
+
+        closeWorld.setEnabled(true);
+        closeWorld.setVisible(true);
+    }
+
+    public void onWorldClose() {
+        seedInputBox.setEnabled(true);
+        seedInputBox.setVisible(true);
+
+        closeWorld.setEnabled(false);
+        closeWorld.setVisible(false);
     }
 
     public void addManaged(Component c) {

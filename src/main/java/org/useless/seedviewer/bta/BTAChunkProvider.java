@@ -11,6 +11,7 @@ import net.minecraft.core.world.biome.Biomes;
 import net.minecraft.core.world.biome.provider.BiomeProvider;
 import net.minecraft.core.world.biome.provider.BiomeProviderOverworld;
 import net.minecraft.core.world.save.ISaveFormat;
+import net.minecraft.core.world.save.LevelData;
 import net.minecraft.core.world.save.LevelStorage;
 import net.minecraft.core.world.save.SaveFormatBase;
 import net.minecraft.core.world.save.mcregion.SaveFormat19134;
@@ -39,7 +40,7 @@ public class BTAChunkProvider implements ChunkProvider {
         biomeProvider = new BiomeProviderOverworld(seed, WorldTypes.OVERWORLD_EXTENDED);
     }
 
-    public BTAChunkProvider(File worldFolder) {
+    public BTAChunkProvider(File worldFolder, LevelData data) {
         SaveFormatBase saveFormat = new SaveFormat19134(worldFolder.getParentFile());
         LevelStorage saveHandler = saveFormat.getSaveHandler(worldFolder.getName(), false);
         World world = new World(saveHandler, saveHandler.getLevelData().getWorldName(), saveHandler.getLevelData().getRandomSeed(), null, null);
