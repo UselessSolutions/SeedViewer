@@ -1,7 +1,6 @@
 package org.useless.seedviewer.gui.components;
 
 import org.useless.seedviewer.Global;
-import org.useless.seedviewer.collections.ObjectWrapper;
 import org.useless.seedviewer.gui.SeedViewer;
 
 import javax.imageio.ImageIO;
@@ -26,6 +25,7 @@ public class InputPanel extends JPanel {
 
     public JCheckBox slimeChunksBox;
     public JCheckBox showBordersBox;
+    public JCheckBox showBiomesBox;
     public JCheckBox showCrosshairBox;
     public JTextField seedInputBox;
     public JButton screenshot;
@@ -55,11 +55,19 @@ public class InputPanel extends JPanel {
         slimeChunksBox.setSelected(seedViewer.viewport.showSlimeChunks.get());
         slimeChunksBox.addChangeListener(e -> seedViewer.viewport.showSlimeChunks.set(slimeChunksBox.isSelected()));
         slimeChunksBox.addChangeListener(e -> seedViewer.viewport.repaint());
+
         showBordersBox = new JCheckBox("Chunk Borders");
         showBordersBox.setSize(0, boxHeight);
-        showBordersBox.setSelected(seedViewer.viewport.showBiomeBorders.get());
-        showBordersBox.addChangeListener(e -> seedViewer.viewport.showBiomeBorders.set(showBordersBox.isSelected()));
+        showBordersBox.setSelected(seedViewer.viewport.showChunkBorders.get());
+        showBordersBox.addChangeListener(e -> seedViewer.viewport.showChunkBorders.set(showBordersBox.isSelected()));
         showBordersBox.addChangeListener(e -> seedViewer.viewport.repaint());
+
+        showBiomesBox = new JCheckBox("Show Biomes");
+        showBiomesBox.setSize(0, boxHeight);
+        showBiomesBox.setSelected(seedViewer.viewport.showBiomesBorders.get());
+        showBiomesBox.addChangeListener(e -> seedViewer.viewport.showBiomesBorders.set(showBiomesBox.isSelected()));
+        showBiomesBox.addChangeListener(e -> seedViewer.viewport.repaint());
+
         showCrosshairBox = new JCheckBox("Enable Cross-hair");
         showCrosshairBox.setSize(0, boxHeight);
         showCrosshairBox.setSelected(seedViewer.viewport.showCrosshair.get());
@@ -68,6 +76,7 @@ public class InputPanel extends JPanel {
 
         addManaged(slimeChunksBox);
         addManaged(showBordersBox);
+        addManaged(showBiomesBox);
         addManaged(showCrosshairBox);
 
         seedInputBox = new JTextField(seedViewer.viewport.seed.toString());

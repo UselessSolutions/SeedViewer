@@ -54,7 +54,8 @@ public class Viewport extends JLabel {
     public final ObjectWrapper<@NotNull Float> viewZ = new ObjectWrapper<>(0F);
 
     public final ObjectWrapper<@NotNull Boolean> showSlimeChunks = new ObjectWrapper<>(true);
-    public final ObjectWrapper<@NotNull Boolean> showBiomeBorders = new ObjectWrapper<>(true);
+    public final ObjectWrapper<@NotNull Boolean> showChunkBorders = new ObjectWrapper<>(true);
+    public final ObjectWrapper<@NotNull Boolean> showBiomesBorders = new ObjectWrapper<>(true);
     public final ObjectWrapper<@NotNull Boolean> showCrosshair = new ObjectWrapper<>(true);
 
     private final SeedViewer seedViewer;
@@ -246,6 +247,15 @@ public class Viewport extends JLabel {
                     subImgHeight,
                     null,
                     null);
+                if (showBiomesBorders.get()) {
+                    g.drawImage(view.getBiomeMapImage(),
+                        subImgX,
+                        subImgZ,
+                        subImgWidth,
+                        subImgHeight,
+                        null,
+                        null);
+                }
                 if (showSlimeChunks.get() && SeedViewer.isSlimeChunk(seed, view.getLocation())) {
                     Graphics gSlime = g.create();
                     if (slimeVignette == null) {
@@ -266,7 +276,7 @@ public class Viewport extends JLabel {
                     gSlime.dispose();
                 }
             }
-            if (showBiomeBorders.get()) {
+            if (showChunkBorders.get()) {
                 int leftChunk = viewportBounds.x / Chunk.CHUNK_SIZE_X;
                 int widthChunks = viewportBounds.width / Chunk.CHUNK_SIZE_X;
                 int topChunk = viewportBounds.y / Chunk.CHUNK_SIZE_Z;

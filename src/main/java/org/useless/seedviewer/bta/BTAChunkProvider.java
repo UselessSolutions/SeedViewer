@@ -2,8 +2,10 @@ package org.useless.seedviewer.bta;
 
 import net.minecraft.core.Global;
 import net.minecraft.core.block.Block;
+import net.minecraft.core.block.Blocks;
 import net.minecraft.core.data.registry.Registries;
 import net.minecraft.core.item.Item;
+import net.minecraft.core.item.Items;
 import net.minecraft.core.lang.I18n;
 import net.minecraft.core.world.SpawnerMobs;
 import net.minecraft.core.world.World;
@@ -27,8 +29,8 @@ import java.io.IOException;
 public class BTAChunkProvider implements ChunkProvider {
     static {
         Global.accessor = new DummyMinecraft();
-        Block.initializeBlocks();
-        Item.initializeItems();
+        Blocks.init();
+        Items.init();
         new Registries();
         Biomes.init();
         WorldTypes.init();

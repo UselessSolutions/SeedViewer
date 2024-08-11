@@ -1,6 +1,7 @@
 package org.useless.seedviewer.bta;
 
 import net.minecraft.core.block.Block;
+import net.minecraft.core.block.material.MaterialColor;
 import org.jetbrains.annotations.NotNull;
 import org.useless.seedviewer.collections.ChunkPos2D;
 import org.useless.seedviewer.collections.ChunkPos3D;
@@ -23,7 +24,8 @@ public class BTAComplexChunk implements Chunk {
     public Color getBlockColor(ChunkPos3D pos) {
         Block b = Block.getBlock(chunk.getBlockID(pos.x, pos.y, pos.z));
         if (b == null) return null;
-        return new Color(b.blockMaterial.color.col);
+        int meta = chunk.getBlockMetadata(pos.x, pos.y, pos.z);
+        return new Color(MaterialColor.getColorFromIndex(MaterialColor.getColorIndexFromBlock(b, meta)));
     }
 
     @Override

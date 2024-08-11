@@ -42,23 +42,30 @@ public class ChunkView {
                 inProgressChunks.incrementAndGet();
                 try {
                     Chunk chunk = provider.getChunk(location);
+                    Graphics g = biomeMapImage.getGraphics();
+                    g.setColor(new Color(1, 1, 1, 0));
+                    g.fillRect(0, 0, Chunk.CHUNK_SIZE_X, Chunk.CHUNK_SIZE_Z);
                     for (int x = 0; x < Chunk.CHUNK_SIZE_X; x++) {
                         for (int z = 0; z < Chunk.CHUNK_SIZE_Z; z++) {
                             Biome b = chunk.getBiome(new ChunkPos3D(x, 128, z));
-                            Graphics g2 = biomeMapImage.getGraphics();
-                            g2.setColor(new Color(b.getColor()));
-                            g2.fillRect(x * RESOLUTION_SCALE, z * RESOLUTION_SCALE, RESOLUTION_SCALE, RESOLUTION_SCALE);
-                            g2.dispose();
+                            Color c = new Color(b.getColor());
+                            c = new Color(c.getRed(), c.getGreen(), c.getBlue(), 128);
+                            g.setColor(c);
+                            g.fillRect(x * RESOLUTION_SCALE, z * RESOLUTION_SCALE, RESOLUTION_SCALE, RESOLUTION_SCALE);
                         }
                     }
+                    g.dispose();
+                    Graphics g2 = terrainMapImage.getGraphics();
+                    g2.setColor(new Color(1, 1, 1, 0));
+                    g2.fillRect(0, 0, Chunk.CHUNK_SIZE_X, Chunk.CHUNK_SIZE_Z);
                     for (int x = 0; x < Chunk.CHUNK_SIZE_X; x++) {
                         for (int z = 0; z < Chunk.CHUNK_SIZE_Z; z++) {
-                            Graphics g2 = terrainMapImage.getGraphics();
-                            g2.setColor(chunk.getBlockColor(new ChunkPos3D(x, chunk.getHeight(new ChunkPos2D(x, z)) - 1, z)));
+                            Color c = chunk.getBlockColor(new ChunkPos3D(x, chunk.getHeight(new ChunkPos2D(x, z)) - 1, z));
+                            g2.setColor(c);
                             g2.fillRect(x * RESOLUTION_SCALE, z * RESOLUTION_SCALE, RESOLUTION_SCALE, RESOLUTION_SCALE);
-                            g2.dispose();
                         }
                     }
+                    g2.dispose();
                 } finally {
                     inProgressChunks.decrementAndGet();
                 }
