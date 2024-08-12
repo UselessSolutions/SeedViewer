@@ -13,7 +13,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class ChunkView {
-    private static final ExecutorService threadManager = Executors.newFixedThreadPool(10);
+    private static final ExecutorService InitializerService = Executors.newFixedThreadPool(10);
+    private static final ExecutorService PostProcessorService = Executors.newFixedThreadPool(10);
 
     private final int RESOLUTION_SCALE = 1;
     private final BufferedImage biomeMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X * RESOLUTION_SCALE, Chunk.CHUNK_SIZE_Z * RESOLUTION_SCALE, BufferedImage.TYPE_INT_ARGB);
@@ -24,8 +25,8 @@ public class ChunkView {
 
     public long lastSeenTime = System.currentTimeMillis();
 
-    private Thread activeThread = null;
     private Future<?> loadTask;
+    private Future<?> processTask = null;
 
     private boolean hasInitialized = false;
     private volatile boolean hasPostProcessed = false;
@@ -34,7 +35,7 @@ public class ChunkView {
         this.location = location;
         this.provider = provider;
 
-        loadTask = threadManager.submit(
+        loadTask = InitializerService.submit(
             () -> {
                 try {
                     Chunk chunk = provider.getChunk(location);
@@ -84,7 +85,7 @@ public class ChunkView {
 
     public void process(ChunkView posZ) {
         synchronized (this) {
-            activeThread = new Thread(() -> {
+            processTask = PostProcessorService.submit(() -> {
                 try {
                     for (int x = 0; x < Chunk.CHUNK_SIZE_X; x++) {
                         for (int z = 0; z < Chunk.CHUNK_SIZE_Z; z++) {
@@ -116,11 +117,8 @@ public class ChunkView {
                     }
                 } finally {
                     hasPostProcessed = true;
-                    activeThread = null;
                 }
             });
-            activeThread.setPriority(4);
-            activeThread.start();
         }
     }
 
@@ -160,8 +158,8 @@ public class ChunkView {
     }
 
     public void kill() {
-        if (activeThread != null) {
-            activeThread.interrupt();
+        if (processTask != null) {
+            processTask.cancel(true);
         }
         if (loadTask != null) {
             loadTask.cancel(true);
