@@ -23,6 +23,7 @@ public class BTABiome implements Biome {
 
     @Override
     public int getColor() {
+        if (biome == null) return 0x00000000;
         return biome.color;
     }
 }

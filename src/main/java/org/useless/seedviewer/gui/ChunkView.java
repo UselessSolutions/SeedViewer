@@ -58,7 +58,7 @@ public class ChunkView {
                             height.fillRect(x * RESOLUTION_SCALE, z * RESOLUTION_SCALE, RESOLUTION_SCALE, RESOLUTION_SCALE);
 
                             int wd = chunk.getWaterDepth(pos2D);
-                            depth.setColor(new Color(wd, wd, wd));
+                            depth.setColor(new Color(wd, wd, wd, 255));
                             depth.fillRect(x * RESOLUTION_SCALE, z * RESOLUTION_SCALE, RESOLUTION_SCALE, RESOLUTION_SCALE);
 
                             Biome b = chunk.getBiome(new ChunkPos3D(x, h, z));
@@ -76,7 +76,10 @@ public class ChunkView {
                     biome.dispose();
                     height.dispose();
                     depth.dispose();
-                } finally {
+                } catch (Exception e) {
+                    Global.LOGGER.error("Error when initializing chunk {}, {}", location.x, location.z, e);
+                }
+                finally {
                     hasInitialized = true;
                 }
             }
@@ -131,7 +134,7 @@ public class ChunkView {
                             if (brightness == 1) {
                                 final int current = terrainMapImage.getRGB(x, z) ;
                                 final int shade = 220;
-                                final int a = (((current >> 24) & 0xFF) * shade) / 0xFF;
+                                final int a = (((current >> 24) & 0xFF));
                                 final int r = (((current >> 16) & 0xFF) * shade) / 0xFF;
                                 final int g = (((current >>  8) & 0xFF) * shade) / 0xFF;
                                 final int b = (((current      ) & 0xFF) * shade) / 0xFF;
@@ -139,7 +142,7 @@ public class ChunkView {
                             } else if (brightness == 0) {
                                 final int current = terrainMapImage.getRGB(x, z);
                                 final int shade = 180;
-                                final int a = (((current >> 24) & 0xFF) * shade) / 0xFF;
+                                final int a = (((current >> 24) & 0xFF));
                                 final int r = (((current >> 16) & 0xFF) * shade) / 0xFF;
                                 final int g = (((current >>  8) & 0xFF) * shade) / 0xFF;
                                 final int b = (((current      ) & 0xFF) * shade) / 0xFF;

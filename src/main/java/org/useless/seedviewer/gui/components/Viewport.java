@@ -7,6 +7,7 @@ import org.useless.seedviewer.TestChunkProvider;
 import org.useless.seedviewer.bta.BTAChunkProvider;
 import org.useless.seedviewer.bta.BTAWorld;
 import org.useless.seedviewer.collections.ChunkLocation;
+import org.useless.seedviewer.collections.ChunkPos2D;
 import org.useless.seedviewer.collections.ChunkPos3D;
 import org.useless.seedviewer.collections.ObjectWrapper;
 import org.useless.seedviewer.data.Biome;
@@ -272,7 +273,8 @@ public class Viewport extends JLabel {
             lastHoveredChunk = chunk;
             lastHoveredLocation = chunkLocation;
         }
-        return chunk.getBiome(new ChunkPos3D(((int) Math.floor(viewX.get())) - chunkLocation.x * Chunk.CHUNK_SIZE_X, 128, ((int) Math.floor(-viewZ.get())) - chunkLocation.z * Chunk.CHUNK_SIZE_Z));
+        ChunkPos2D c2D = new ChunkPos2D(((int) Math.floor(viewX.get())) - chunkLocation.x * Chunk.CHUNK_SIZE_X, ((int) Math.floor(-viewZ.get())) - chunkLocation.z * Chunk.CHUNK_SIZE_Z);
+        return chunk.getBiome(new ChunkPos3D(c2D.x, chunk.getHeight(c2D), c2D.z));
     }
 
     @Override
