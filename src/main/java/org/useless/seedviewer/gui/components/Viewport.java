@@ -28,8 +28,10 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -135,19 +137,7 @@ public class Viewport extends JLabel {
             removeChunkView(location);
         }
 
-        ChunkLocation topLeftLocation =
-            new ChunkLocation(viewportBounds.x/Chunk.CHUNK_SIZE_X,
-                viewportBounds.y/Chunk.CHUNK_SIZE_Z);
-        int chunksX = viewportBounds.width/Chunk.CHUNK_SIZE_X;
-        int chunksZ = viewportBounds.height/Chunk.CHUNK_SIZE_Z;
-
-        for (int _x = topLeftLocation.x; _x < topLeftLocation.x + chunksX; _x++) {
-            for (int _z = topLeftLocation.z; _z < topLeftLocation.z + chunksZ; _z++) {
-                ChunkLocation location = new ChunkLocation(_x, _z);
-                if (chunkViewMap.containsKey(location)) continue;
-                addChunkView(location);
-            }
-        }
+        addMissingViewers(viewportBounds);
 
         if (showTerrain.get()) {
             for (ChunkView view : chunkViewMap.values()) {
@@ -161,6 +151,40 @@ public class Viewport extends JLabel {
         }
 
         repaint();
+    }
+
+    public synchronized void addMissingViewers(Rectangle viewportBounds) {
+        ChunkLocation topLeftLocation =
+            new ChunkLocation(viewportBounds.x/Chunk.CHUNK_SIZE_X,
+                viewportBounds.y/Chunk.CHUNK_SIZE_Z);
+        int chunksX = viewportBounds.width/Chunk.CHUNK_SIZE_X;
+        int chunksZ = viewportBounds.height/Chunk.CHUNK_SIZE_Z;
+
+        List<ChunkLocation> pendingLocation = new ArrayList<>();
+        for (int _x = topLeftLocation.x; _x < topLeftLocation.x + chunksX; _x++) {
+            for (int _z = topLeftLocation.z; _z < topLeftLocation.z + chunksZ; _z++) {
+                ChunkLocation location = new ChunkLocation(_x, _z);
+                if (chunkViewMap.containsKey(location)) continue;
+                pendingLocation.add(location);
+            }
+        }
+        pendingLocation.sort((o1, o2) -> {
+            ChunkLocation viewLoc = new ChunkLocation((int) Math.floor(viewX.get()/ Chunk.CHUNK_SIZE_X), (int) Math.floor(-viewZ.get()/ Chunk.CHUNK_SIZE_Z));
+            int d1;
+            {
+                int dx = o1.x - viewLoc.x;
+                int dz = o1.z - viewLoc.z;
+                d1 = (dx * dx) + (dz * dz);
+            }
+            int d2;
+            {
+                int dx = o2.x - viewLoc.x;
+                int dz = o2.z - viewLoc.z;
+                d2 = (dx * dx) + (dz * dz);
+            }
+            return d1 - d2;
+        });
+        pendingLocation.forEach(this::addChunkView);
     }
 
     public synchronized void setSeed(long seed) {
