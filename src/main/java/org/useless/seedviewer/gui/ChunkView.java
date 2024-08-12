@@ -1,6 +1,5 @@
 package org.useless.seedviewer.gui;
 
-import org.useless.seedviewer.Global;
 import org.useless.seedviewer.collections.ChunkLocation;
 import org.useless.seedviewer.collections.ChunkPos2D;
 import org.useless.seedviewer.collections.ChunkPos3D;
@@ -9,11 +8,12 @@ import org.useless.seedviewer.data.Chunk;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class ChunkView {
-    public static final int MAX_IN_PROGRESS_CHUNKS = 10;
-    public static AtomicInteger inProgressChunks = new AtomicInteger(0);
+    private static final ExecutorService threadManager = Executors.newFixedThreadPool(10);
 
     private final int RESOLUTION_SCALE = 1;
     private final BufferedImage biomeMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X * RESOLUTION_SCALE, Chunk.CHUNK_SIZE_Z * RESOLUTION_SCALE, BufferedImage.TYPE_INT_ARGB);
@@ -24,6 +24,9 @@ public class ChunkView {
 
     public long lastSeenTime = System.currentTimeMillis();
 
+    private Thread activeThread = null;
+    private Future<?> loadTask;
+
     private boolean hasInitialized = false;
     private volatile boolean hasPostProcessed = false;
 
@@ -31,18 +34,8 @@ public class ChunkView {
         this.location = location;
         this.provider = provider;
 
-        new Thread(
+        loadTask = threadManager.submit(
             () -> {
-
-                while (inProgressChunks.get() > MAX_IN_PROGRESS_CHUNKS) {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        Global.LOGGER.error("Expected Interrupt", e);
-                        break;
-                    }
-                }
-                inProgressChunks.incrementAndGet();
                 try {
                     Chunk chunk = provider.getChunk(location);
 
@@ -75,11 +68,10 @@ public class ChunkView {
                     biome.dispose();
                     height.dispose();
                 } finally {
-                    inProgressChunks.decrementAndGet();
                     hasInitialized = true;
                 }
             }
-        ).start();
+        );
     }
 
     public boolean hasInit() {
@@ -92,7 +84,7 @@ public class ChunkView {
 
     public void process(ChunkView posZ) {
         synchronized (this) {
-            new Thread(() -> {
+            activeThread = new Thread(() -> {
                 try {
                     for (int x = 0; x < Chunk.CHUNK_SIZE_X; x++) {
                         for (int z = 0; z < Chunk.CHUNK_SIZE_Z; z++) {
@@ -124,8 +116,11 @@ public class ChunkView {
                     }
                 } finally {
                     hasPostProcessed = true;
+                    activeThread = null;
                 }
-            }).start();
+            });
+            activeThread.setPriority(4);
+            activeThread.start();
         }
     }
 
@@ -162,5 +157,14 @@ public class ChunkView {
 
     public Rectangle getWorldBounds() {
         return new Rectangle(location.x * Chunk.CHUNK_SIZE_X, location.z * Chunk.CHUNK_SIZE_Z, Chunk.CHUNK_SIZE_X, Chunk.CHUNK_SIZE_Z);
+    }
+
+    public void kill() {
+        if (activeThread != null) {
+            activeThread.interrupt();
+        }
+        if (loadTask != null) {
+            loadTask.cancel(true);
+        }
     }
 }

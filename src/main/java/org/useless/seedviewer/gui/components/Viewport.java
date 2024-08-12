@@ -42,7 +42,7 @@ public class Viewport extends JLabel {
     public static final float ZOOM_MIN = 1f;
     public static final float ZOOM_MAX = 16f;
 
-    public final Map<ChunkLocation, ChunkView> chunkViewMap = new HashMap<>();
+    private final Map<ChunkLocation, ChunkView> chunkViewMap = new HashMap<>();
     private final BufferedImage slimeVignette;
 
     public ChunkProvider chunkProvider = new TestChunkProvider();
@@ -120,7 +120,7 @@ public class Viewport extends JLabel {
         this.setBounds(newShape.x, newShape.y, newShape.width, newShape.height);
     }
 
-    public void tick() {
+    public synchronized void tick() {
         Rectangle viewportBounds = getViewportBounds();
         Set<ChunkLocation> removalQueue = new HashSet<>();
         for (ChunkView view : chunkViewMap.values()) {
@@ -163,16 +163,16 @@ public class Viewport extends JLabel {
         repaint();
     }
 
-    public void setSeed(long seed) {
+    public synchronized void setSeed(long seed) {
         this.seed.set(seed);
-        chunkViewMap.clear();
+        clearChunkViews();
         viewX.set(0F);
         viewZ.set(0F);
         chunkProvider = new BTAChunkProvider(this.seed.get());
         seedViewer.queueResize();
     }
 
-    public void setWorld(@Nullable File file) {
+    public synchronized void setWorld(@Nullable File file) {
         if (file != null) {
             try {
                 world.set(new BTAWorld(file));
@@ -187,7 +187,7 @@ public class Viewport extends JLabel {
             chunkProvider = new BTAChunkProvider(seed.get());
         }
 
-        chunkViewMap.clear();
+        clearChunkViews();
         viewX.set(0F);
         viewZ.set(0F);
         seedViewer.queueResize();
@@ -227,7 +227,13 @@ public class Viewport extends JLabel {
     }
 
     public synchronized void removeChunkView(ChunkLocation location) {
-        chunkViewMap.remove(location);
+        ChunkView view = chunkViewMap.remove(location);
+        if (view != null) view.kill();
+    }
+
+    public synchronized void clearChunkViews() {
+        chunkViewMap.forEach((l, c) -> c.kill());
+        chunkViewMap.clear();
     }
 
     private ChunkLocation lastHoveredLocation = null;
