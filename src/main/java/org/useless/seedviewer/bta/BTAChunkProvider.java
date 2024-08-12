@@ -40,6 +40,8 @@ public class BTAChunkProvider implements ChunkProvider {
 
     ChunkLoader chunkLoader = null;
     private final BiomeProvider biomeProvider;
+
+
     public BTAChunkProvider(long seed) {
         biomeProvider = new BiomeProviderOverworld(seed, WorldTypes.OVERWORLD_EXTENDED);
     }
@@ -62,4 +64,5 @@ public class BTAChunkProvider implements ChunkProvider {
         }
         return new BTASimpleChunk(location, biomeProvider);
     }
+
 }

@@ -12,6 +12,7 @@ public class BTABiome implements Biome {
     }
     @Override
     public String getName() {
+        if (biome == null) return "Unknown";
         return I18n.getInstance().translateKey(biome.translationKey);
     }
 
@@ -22,6 +23,7 @@ public class BTABiome implements Biome {
 
     @Override
     public int getColor() {
+        if (biome == null) return 0x00000000;
         return biome.color;
     }
 }
