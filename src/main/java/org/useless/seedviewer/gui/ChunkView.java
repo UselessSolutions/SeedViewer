@@ -6,6 +6,7 @@ import org.useless.seedviewer.collections.ChunkPos2D;
 import org.useless.seedviewer.collections.ChunkPos3D;
 import org.useless.seedviewer.data.Biome;
 import org.useless.seedviewer.data.Chunk;
+import org.useless.seedviewer.gui.components.Viewport;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -25,6 +26,7 @@ public class ChunkView {
     private final Rectangle bounds;
     private final ChunkLocation location;
     private final ChunkProvider provider;
+    private final Viewport viewport;
 
     public long lastSeenTime = System.currentTimeMillis();
 
@@ -34,7 +36,8 @@ public class ChunkView {
     private boolean hasInitialized = false;
     private volatile boolean hasPostProcessed = false;
 
-    public ChunkView(ChunkLocation location, ChunkProvider provider) {
+    public ChunkView(Viewport viewport, ChunkLocation location, ChunkProvider provider) {
+        this.viewport = viewport;
         this.location = location;
         this.provider = provider;
         this.bounds = new Rectangle(location.x * Chunk.CHUNK_SIZE_X, location.z * Chunk.CHUNK_SIZE_Z, Chunk.CHUNK_SIZE_X, Chunk.CHUNK_SIZE_Z);
@@ -135,6 +138,7 @@ public class ChunkView {
                     }
                 } finally {
                     hasPostProcessed = true;
+                    viewport.repaint();
                 }
             });
         }

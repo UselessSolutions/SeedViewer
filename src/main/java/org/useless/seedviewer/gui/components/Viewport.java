@@ -156,7 +156,6 @@ public class Viewport extends JLabel {
             }
             unpendedChunks.forEach(chunksPendingPostProcess::remove);
         }
-
         repaint();
     }
 
@@ -254,7 +253,7 @@ public class Viewport extends JLabel {
     }
 
     public synchronized void addChunkView(ChunkLocation location) {
-        ChunkView view = new ChunkView(location, chunkProvider);
+        ChunkView view = new ChunkView(this, location, chunkProvider);
         chunkViewMap.put(location, view);
         chunksPendingPostProcess.add(view);
     }
