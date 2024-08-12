@@ -38,8 +38,9 @@ import java.util.Objects;
 import java.util.Set;
 
 public class Viewport extends JLabel {
-    public static final long MS_UNTIL_CHUNK_UNLOAD = 5000;
+    public static final long MS_UNTIL_CHUNK_UNLOAD = 10_000;
     public static final int VIEWPORT_CHUNKS_OVERSCAN = 4;
+    public static final int VIEWPORT_UNLOAD_OVERSCAN = 10;
 
     public static final float ZOOM_SENSITIVITY = 0.125f;
     public static final float ZOOM_MIN = 1f;
@@ -126,9 +127,10 @@ public class Viewport extends JLabel {
 
     public synchronized void tick() {
         Rectangle viewportBounds = getViewportBounds();
+        Rectangle unloadBounds = new Rectangle(viewportBounds.x - VIEWPORT_UNLOAD_OVERSCAN, viewportBounds.y - VIEWPORT_UNLOAD_OVERSCAN, viewportBounds.width + VIEWPORT_UNLOAD_OVERSCAN * 2, viewportBounds.height + VIEWPORT_UNLOAD_OVERSCAN * 2);
         Set<ChunkLocation> removalQueue = new HashSet<>();
         for (ChunkView view : chunkViewMap.values()) {
-            if (viewportBounds.intersects(view.getWorldBounds())) {
+            if (unloadBounds.intersects(view.getWorldBounds())) {
                 view.lastSeenTime = System.currentTimeMillis();
             }
             if (System.currentTimeMillis() - view.lastSeenTime > MS_UNTIL_CHUNK_UNLOAD) {
