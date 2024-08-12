@@ -102,7 +102,7 @@ public class ChunkView {
                         for (int z = 0; z < Chunk.CHUNK_SIZE_Z; z++) {
                             int depth = waterDepthMapImage.getRGB(x, z) >> 8 & 0xFF;
 
-                            int brightness;
+                            int shade = 220;
                             if (depth == 0) {
                                 int lastHeight;
                                 if (z == 0) {
@@ -113,35 +113,26 @@ public class ChunkView {
                                 int height = heightMapImage.getRGB(x, z) & 0xFF;
 
                                 if (height == lastHeight) {
-                                    brightness = 1;
+                                    shade = 220;
                                 } else if (height < lastHeight) {
-                                    brightness = 0;
+                                    shade = 180;
                                 } else {
-                                    brightness = 2;
+                                    shade = 255;
                                 }
                             } else {
                                 double d3 = (double) depth * 0.02D + (double) ((x + z) & 0b1) * 0.2D;
                                 if(d3 < 0.5D) {
-                                    brightness = 2;
+                                    shade = 255;
                                 } else if (d3 > 0.9D) {
-                                    brightness = 0;
+                                    shade = 180;
                                 } else {
-                                    brightness = 1;
+                                    shade = 220;
                                 }
                             }
 
 
-                            if (brightness == 1) {
+                            if (shade != 255) {
                                 final int current = terrainMapImage.getRGB(x, z) ;
-                                final int shade = 220;
-                                final int a = (((current >> 24) & 0xFF));
-                                final int r = (((current >> 16) & 0xFF) * shade) / 0xFF;
-                                final int g = (((current >>  8) & 0xFF) * shade) / 0xFF;
-                                final int b = (((current      ) & 0xFF) * shade) / 0xFF;
-                                terrainMapImage.setRGB(x, z, (a << 24 | r << 16 | g << 8 | b));
-                            } else if (brightness == 0) {
-                                final int current = terrainMapImage.getRGB(x, z);
-                                final int shade = 180;
                                 final int a = (((current >> 24) & 0xFF));
                                 final int r = (((current >> 16) & 0xFF) * shade) / 0xFF;
                                 final int g = (((current >>  8) & 0xFF) * shade) / 0xFF;
