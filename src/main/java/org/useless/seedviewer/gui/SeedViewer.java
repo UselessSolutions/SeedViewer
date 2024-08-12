@@ -46,7 +46,7 @@ public class SeedViewer extends JFrame {
 
 
 
-        new Thread(
+        Thread mainThread = new Thread(
             () -> {
                 long tickCount = 0;
                 while (true) {
@@ -68,7 +68,10 @@ public class SeedViewer extends JFrame {
                     }
                 }
             }
-        ).start();
+        );
+        mainThread.setName("Main");
+        mainThread.setPriority(6);
+        mainThread.start();
     }
 
     public void initFrame() {

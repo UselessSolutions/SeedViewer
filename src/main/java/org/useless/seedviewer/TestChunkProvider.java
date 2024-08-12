@@ -46,6 +46,11 @@ public class TestChunkProvider implements ChunkProvider {
             public int getHeight(ChunkPos2D pos) {
                 return 128;
             }
+
+            @Override
+            public int getWaterDepth(ChunkPos2D pos) {
+                return 0;
+            }
         };
     }
 }

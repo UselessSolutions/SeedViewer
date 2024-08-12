@@ -1,6 +1,7 @@
 package org.useless.seedviewer.bta;
 
 import net.minecraft.core.block.Block;
+import net.minecraft.core.block.material.Material;
 import net.minecraft.core.block.material.MaterialColor;
 import org.jetbrains.annotations.NotNull;
 import org.useless.seedviewer.collections.ChunkPos2D;
@@ -31,5 +32,20 @@ public class BTAComplexChunk implements Chunk {
     @Override
     public int getHeight(ChunkPos2D pos) {
         return chunk.getHeightValue(pos.x, pos.z);
+    }
+
+    @Override
+    public int getWaterDepth(ChunkPos2D pos) {
+        int start = getHeight(pos) - 1;
+        int depth = 0;
+        while (true) {
+            int y = start - depth;
+            if (y < 0) break;
+            Block b = Block.getBlock(chunk.getBlockID(pos.x, y, pos.z));
+            if (b == null) break;
+            if (b.blockMaterial != Material.water) break;
+            depth++;
+        }
+        return depth;
     }
 }

@@ -7,6 +7,7 @@ import org.useless.seedviewer.TestChunkProvider;
 import org.useless.seedviewer.bta.BTAChunkProvider;
 import org.useless.seedviewer.bta.BTAWorld;
 import org.useless.seedviewer.collections.ChunkLocation;
+import org.useless.seedviewer.collections.ChunkPos2D;
 import org.useless.seedviewer.collections.ChunkPos3D;
 import org.useless.seedviewer.collections.ObjectWrapper;
 import org.useless.seedviewer.data.Biome;
@@ -28,8 +29,10 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -42,7 +45,7 @@ public class Viewport extends JLabel {
     public static final float ZOOM_MIN = 1f;
     public static final float ZOOM_MAX = 16f;
 
-    public final Map<ChunkLocation, ChunkView> chunkViewMap = new HashMap<>();
+    private final Map<ChunkLocation, ChunkView> chunkViewMap = new HashMap<>();
     private final BufferedImage slimeVignette;
 
     public ChunkProvider chunkProvider = new TestChunkProvider();
@@ -120,7 +123,7 @@ public class Viewport extends JLabel {
         this.setBounds(newShape.x, newShape.y, newShape.width, newShape.height);
     }
 
-    public void tick() {
+    public synchronized void tick() {
         Rectangle viewportBounds = getViewportBounds();
         Set<ChunkLocation> removalQueue = new HashSet<>();
         for (ChunkView view : chunkViewMap.values()) {
@@ -135,19 +138,7 @@ public class Viewport extends JLabel {
             removeChunkView(location);
         }
 
-        ChunkLocation topLeftLocation =
-            new ChunkLocation(viewportBounds.x/Chunk.CHUNK_SIZE_X,
-                viewportBounds.y/Chunk.CHUNK_SIZE_Z);
-        int chunksX = viewportBounds.width/Chunk.CHUNK_SIZE_X;
-        int chunksZ = viewportBounds.height/Chunk.CHUNK_SIZE_Z;
-
-        for (int _x = topLeftLocation.x; _x < topLeftLocation.x + chunksX; _x++) {
-            for (int _z = topLeftLocation.z; _z < topLeftLocation.z + chunksZ; _z++) {
-                ChunkLocation location = new ChunkLocation(_x, _z);
-                if (chunkViewMap.containsKey(location)) continue;
-                addChunkView(location);
-            }
-        }
+        addMissingViewers(viewportBounds);
 
         if (showTerrain.get()) {
             for (ChunkView view : chunkViewMap.values()) {
@@ -163,16 +154,50 @@ public class Viewport extends JLabel {
         repaint();
     }
 
-    public void setSeed(long seed) {
+    public synchronized void addMissingViewers(Rectangle viewportBounds) {
+        ChunkLocation topLeftLocation =
+            new ChunkLocation(viewportBounds.x/Chunk.CHUNK_SIZE_X,
+                viewportBounds.y/Chunk.CHUNK_SIZE_Z);
+        int chunksX = viewportBounds.width/Chunk.CHUNK_SIZE_X;
+        int chunksZ = viewportBounds.height/Chunk.CHUNK_SIZE_Z;
+
+        List<ChunkLocation> pendingLocation = new ArrayList<>();
+        for (int _x = topLeftLocation.x; _x < topLeftLocation.x + chunksX; _x++) {
+            for (int _z = topLeftLocation.z; _z < topLeftLocation.z + chunksZ; _z++) {
+                ChunkLocation location = new ChunkLocation(_x, _z);
+                if (chunkViewMap.containsKey(location)) continue;
+                pendingLocation.add(location);
+            }
+        }
+        pendingLocation.sort((o1, o2) -> {
+            ChunkLocation viewLoc = new ChunkLocation((int) Math.floor(viewX.get()/ Chunk.CHUNK_SIZE_X), (int) Math.floor(-viewZ.get()/ Chunk.CHUNK_SIZE_Z));
+            int d1;
+            {
+                int dx = o1.x - viewLoc.x;
+                int dz = o1.z - viewLoc.z;
+                d1 = (dx * dx) + (dz * dz);
+            }
+            int d2;
+            {
+                int dx = o2.x - viewLoc.x;
+                int dz = o2.z - viewLoc.z;
+                d2 = (dx * dx) + (dz * dz);
+            }
+            return d1 - d2;
+        });
+        pendingLocation.forEach(this::addChunkView);
+    }
+
+    public synchronized void setSeed(long seed) {
         this.seed.set(seed);
-        chunkViewMap.clear();
+        clearChunkViews();
         viewX.set(0F);
         viewZ.set(0F);
         chunkProvider = new BTAChunkProvider(this.seed.get());
         seedViewer.queueResize();
     }
 
-    public void setWorld(@Nullable File file) {
+    public synchronized void setWorld(@Nullable File file) {
         if (file != null) {
             try {
                 world.set(new BTAWorld(file));
@@ -187,7 +212,7 @@ public class Viewport extends JLabel {
             chunkProvider = new BTAChunkProvider(seed.get());
         }
 
-        chunkViewMap.clear();
+        clearChunkViews();
         viewX.set(0F);
         viewZ.set(0F);
         seedViewer.queueResize();
@@ -227,12 +252,29 @@ public class Viewport extends JLabel {
     }
 
     public synchronized void removeChunkView(ChunkLocation location) {
-        chunkViewMap.remove(location);
+        ChunkView view = chunkViewMap.remove(location);
+        if (view != null) view.kill();
     }
 
-    public Biome getHoveredBiome() {
+    public synchronized void clearChunkViews() {
+        chunkViewMap.forEach((l, c) -> c.kill());
+        chunkViewMap.clear();
+    }
+
+    private ChunkLocation lastHoveredLocation = null;
+    private Chunk lastHoveredChunk = null;
+    public synchronized Biome getHoveredBiome() {
         ChunkLocation chunkLocation = new ChunkLocation((int) Math.floor(viewX.get()/ Chunk.CHUNK_SIZE_X), (int) Math.floor(-viewZ.get()/ Chunk.CHUNK_SIZE_Z));
-        return chunkProvider.getChunk(chunkLocation).getBiome(new ChunkPos3D(((int) Math.floor(viewX.get())) - chunkLocation.x * Chunk.CHUNK_SIZE_X, 128, ((int) Math.floor(-viewZ.get())) - chunkLocation.z * Chunk.CHUNK_SIZE_Z));
+        Chunk chunk;
+        if (lastHoveredLocation != null && lastHoveredChunk != null && lastHoveredLocation.equals(chunkLocation)) {
+            chunk = lastHoveredChunk;
+        } else {
+            chunk = chunkProvider.getChunk(chunkLocation);
+            lastHoveredChunk = chunk;
+            lastHoveredLocation = chunkLocation;
+        }
+        ChunkPos2D c2D = new ChunkPos2D(((int) Math.floor(viewX.get())) - chunkLocation.x * Chunk.CHUNK_SIZE_X, ((int) Math.floor(-viewZ.get())) - chunkLocation.z * Chunk.CHUNK_SIZE_Z);
+        return chunk.getBiome(new ChunkPos3D(c2D.x, chunk.getHeight(c2D), c2D.z));
     }
 
     @Override

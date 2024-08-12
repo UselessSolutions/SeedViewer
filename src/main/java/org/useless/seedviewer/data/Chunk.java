@@ -13,4 +13,5 @@ public interface Chunk {
     Biome getBiome(ChunkPos3D pos);
     Color getBlockColor(ChunkPos3D pos);
     int getHeight(ChunkPos2D pos);
+    int getWaterDepth(ChunkPos2D pos);
 }

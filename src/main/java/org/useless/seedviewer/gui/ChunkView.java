@@ -9,20 +9,26 @@ import org.useless.seedviewer.data.Chunk;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class ChunkView {
-    public static final int MAX_IN_PROGRESS_CHUNKS = 10;
-    public static AtomicInteger inProgressChunks = new AtomicInteger(0);
+    private static final ExecutorService InitializerService = Executors.newFixedThreadPool(10);
+    private static final ExecutorService PostProcessorService = Executors.newFixedThreadPool(10);
 
     private final int RESOLUTION_SCALE = 1;
     private final BufferedImage biomeMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X * RESOLUTION_SCALE, Chunk.CHUNK_SIZE_Z * RESOLUTION_SCALE, BufferedImage.TYPE_INT_ARGB);
     private final BufferedImage terrainMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X * RESOLUTION_SCALE, Chunk.CHUNK_SIZE_Z * RESOLUTION_SCALE, BufferedImage.TYPE_INT_ARGB);
     private final BufferedImage heightMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X * RESOLUTION_SCALE, Chunk.CHUNK_SIZE_Z * RESOLUTION_SCALE, BufferedImage.TYPE_BYTE_GRAY);
+    private final BufferedImage waterDepthMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X * RESOLUTION_SCALE, Chunk.CHUNK_SIZE_Z * RESOLUTION_SCALE, BufferedImage.TYPE_BYTE_GRAY);
     private final ChunkLocation location;
     private final ChunkProvider provider;
 
     public long lastSeenTime = System.currentTimeMillis();
+
+    private Future<?> loadTask;
+    private Future<?> processTask = null;
 
     private boolean hasInitialized = false;
     private volatile boolean hasPostProcessed = false;
@@ -31,24 +37,15 @@ public class ChunkView {
         this.location = location;
         this.provider = provider;
 
-        new Thread(
+        loadTask = InitializerService.submit(
             () -> {
-
-                while (inProgressChunks.get() > MAX_IN_PROGRESS_CHUNKS) {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        Global.LOGGER.error("Expected Interrupt", e);
-                        break;
-                    }
-                }
-                inProgressChunks.incrementAndGet();
                 try {
                     Chunk chunk = provider.getChunk(location);
 
                     Graphics terrain = terrainMapImage.getGraphics();
                     Graphics biome = biomeMapImage.getGraphics();
                     Graphics height = heightMapImage.getGraphics();
+                    Graphics depth = waterDepthMapImage.getGraphics();
                     terrain.setColor(new Color(1, 1, 1, 0));
                     terrain.fillRect(0, 0, Chunk.CHUNK_SIZE_X, Chunk.CHUNK_SIZE_Z);
                     biome.setColor(new Color(1, 1, 1, 0));
@@ -59,6 +56,10 @@ public class ChunkView {
                             int h = chunk.getHeight(pos2D) - 1;
                             height.setColor(new Color(h, h, h));
                             height.fillRect(x * RESOLUTION_SCALE, z * RESOLUTION_SCALE, RESOLUTION_SCALE, RESOLUTION_SCALE);
+
+                            int wd = chunk.getWaterDepth(pos2D);
+                            depth.setColor(new Color(wd, wd, wd, 255));
+                            depth.fillRect(x * RESOLUTION_SCALE, z * RESOLUTION_SCALE, RESOLUTION_SCALE, RESOLUTION_SCALE);
 
                             Biome b = chunk.getBiome(new ChunkPos3D(x, h, z));
                             Color biomeColor = new Color(b.getColor());
@@ -74,12 +75,15 @@ public class ChunkView {
                     terrain.dispose();
                     biome.dispose();
                     height.dispose();
-                } finally {
-                    inProgressChunks.decrementAndGet();
+                    depth.dispose();
+                } catch (Exception e) {
+                    Global.LOGGER.error("Error when initializing chunk {}, {}", location.x, location.z, e);
+                }
+                finally {
                     hasInitialized = true;
                 }
             }
-        ).start();
+        );
     }
 
     public boolean hasInit() {
@@ -92,32 +96,47 @@ public class ChunkView {
 
     public void process(ChunkView posZ) {
         synchronized (this) {
-            new Thread(() -> {
+            processTask = PostProcessorService.submit(() -> {
                 try {
                     for (int x = 0; x < Chunk.CHUNK_SIZE_X; x++) {
                         for (int z = 0; z < Chunk.CHUNK_SIZE_Z; z++) {
-                            int lastHeight;
-                            if (z == 0) {
-                                lastHeight = posZ.getHeightMapImage().getRGB(x, z + 15);
+                            int depth = waterDepthMapImage.getRGB(x, z) >> 8 & 0xFF;
+
+                            int shade = 220;
+                            if (depth == 0) {
+                                int lastHeight;
+                                if (z == 0) {
+                                    lastHeight = posZ.getHeightMapImage().getRGB(x, z + 15) & 0xFF;
+                                } else {
+                                    lastHeight = heightMapImage.getRGB(x, z - 1) & 0xFF;
+                                }
+                                int height = heightMapImage.getRGB(x, z) & 0xFF;
+
+                                if (height == lastHeight) {
+                                    shade = 220;
+                                } else if (height < lastHeight) {
+                                    shade = 180;
+                                } else {
+                                    shade = 255;
+                                }
                             } else {
-                                lastHeight = heightMapImage.getRGB(x, z - 1);
+                                double d3 = (double) depth * 0.02D + (double) ((x + z) & 0b1) * 0.2D;
+                                if(d3 < 0.5D) {
+                                    shade = 255;
+                                } else if (d3 > 0.9D) {
+                                    shade = 180;
+                                } else {
+                                    shade = 220;
+                                }
                             }
-                            int height = heightMapImage.getRGB(x, z);
-                            if (height == lastHeight) {
-                                int current = terrainMapImage.getRGB(x, z);
-                                int shade = 220;
-                                int a = (((current >> 24) & 0xFF) * shade) / 0xFF;
-                                int r = (((current >> 16) & 0xFF) * shade) / 0xFF;
-                                int g = (((current >>  8) & 0xFF) * shade) / 0xFF;
-                                int b = (((current      ) & 0xFF) * shade) / 0xFF;
-                                terrainMapImage.setRGB(x, z, (a << 24 | r << 16 | g << 8 | b));
-                            } else if (height < lastHeight) {
-                                int current = terrainMapImage.getRGB(x, z);
-                                int shade = 180;
-                                int a = (((current >> 24) & 0xFF) * shade) / 0xFF;
-                                int r = (((current >> 16) & 0xFF) * shade) / 0xFF;
-                                int g = (((current >>  8) & 0xFF) * shade) / 0xFF;
-                                int b = (((current      ) & 0xFF) * shade) / 0xFF;
+
+
+                            if (shade != 255) {
+                                final int current = terrainMapImage.getRGB(x, z) ;
+                                final int a = (((current >> 24) & 0xFF));
+                                final int r = (((current >> 16) & 0xFF) * shade) / 0xFF;
+                                final int g = (((current >>  8) & 0xFF) * shade) / 0xFF;
+                                final int b = (((current      ) & 0xFF) * shade) / 0xFF;
                                 terrainMapImage.setRGB(x, z, (a << 24 | r << 16 | g << 8 | b));
                             }
                         }
@@ -125,7 +144,7 @@ public class ChunkView {
                 } finally {
                     hasPostProcessed = true;
                 }
-            }).start();
+            });
         }
     }
 
@@ -162,5 +181,14 @@ public class ChunkView {
 
     public Rectangle getWorldBounds() {
         return new Rectangle(location.x * Chunk.CHUNK_SIZE_X, location.z * Chunk.CHUNK_SIZE_Z, Chunk.CHUNK_SIZE_X, Chunk.CHUNK_SIZE_Z);
+    }
+
+    public void kill() {
+        if (processTask != null) {
+            processTask.cancel(true);
+        }
+        if (loadTask != null) {
+            loadTask.cancel(true);
+        }
     }
 }
