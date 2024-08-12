@@ -54,6 +54,7 @@ public class ChunkView {
                         for (int z = 0; z < Chunk.CHUNK_SIZE_Z; z++) {
                             ChunkPos2D pos2D = new ChunkPos2D(x, z);
                             int h = chunk.getHeight(pos2D) - 1;
+                            if (h < 0) h = 0;
                             height.setColor(new Color(h, h, h));
                             height.fillRect(x * RESOLUTION_SCALE, z * RESOLUTION_SCALE, RESOLUTION_SCALE, RESOLUTION_SCALE);
 

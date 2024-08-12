@@ -44,8 +44,6 @@ public class SeedViewer extends JFrame {
         initFrame();
         addComponents();
 
-
-
         Thread mainThread = new Thread(
             () -> {
                 long tickCount = 0;
