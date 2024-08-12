@@ -12,6 +12,7 @@ public class BTABiome implements Biome {
     }
     @Override
     public String getName() {
+        if (biome == null) return "Unknown";
         return I18n.getInstance().translateKey(biome.translationKey);
     }
 
