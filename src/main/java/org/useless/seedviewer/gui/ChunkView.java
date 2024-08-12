@@ -60,7 +60,7 @@ public class ChunkView {
                             Biome b = chunk.getBiome(new ChunkPos3D(x, h, z));
                             biomeMapImage.setRGB(x, z, b.getColor() | 0x80_00_00_00);
 
-                            terrainMapImage.setRGB(x, z, chunk.getBlockColor(new ChunkPos3D(x, h, z)) | 0xFF_00_00_00);
+                            terrainMapImage.setRGB(x, z, chunk.getBlockColor(new ChunkPos3D(x, h, z)));
                         }
                     }
                 } catch (Exception e) {
