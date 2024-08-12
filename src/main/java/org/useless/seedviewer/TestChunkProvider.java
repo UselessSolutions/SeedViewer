@@ -38,8 +38,8 @@ public class TestChunkProvider implements ChunkProvider {
             }
 
             @Override
-            public Color getBlockColor(ChunkPos3D pos) {
-                return null;
+            public int getBlockColor(ChunkPos3D pos) {
+                return 0;
             }
 
             @Override

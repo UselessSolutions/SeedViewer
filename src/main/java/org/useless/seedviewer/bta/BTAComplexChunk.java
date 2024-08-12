@@ -22,11 +22,11 @@ public class BTAComplexChunk implements Chunk {
     }
 
     @Override
-    public Color getBlockColor(ChunkPos3D pos) {
+    public int getBlockColor(ChunkPos3D pos) {
         Block b = Block.getBlock(chunk.getBlockID(pos.x, pos.y, pos.z));
-        if (b == null) return null;
+        if (b == null) return 0;
         int meta = chunk.getBlockMetadata(pos.x, pos.y, pos.z);
-        return new Color(MaterialColor.getColorFromIndex(MaterialColor.getColorIndexFromBlock(b, meta)));
+        return MaterialColor.getColorFromIndex(MaterialColor.getColorIndexFromBlock(b, meta));
     }
 
     @Override

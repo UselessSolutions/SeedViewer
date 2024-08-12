@@ -55,19 +55,12 @@ public class ChunkView {
                             heightMapImage.setRGB(x, z, h & 0xFF);
 
                             int wd = chunk.getWaterDepth(pos2D) & 0xFF;
-                            waterDepthMapImage.setRGB(x, z, 0xff000000 | wd << 16 | wd << 8 | wd);
+                            waterDepthMapImage.setRGB(x, z, 0xFF_00_00_00 | wd << 16 | wd << 8 | wd);
 
                             Biome b = chunk.getBiome(new ChunkPos3D(x, h, z));
-                            Color bc = new Color(b.getColor());
-                            bc = new Color(bc.getRed(), bc.getGreen(), bc.getBlue(), 128);
-                            biomeMapImage.setRGB(x, z, bc.getRGB());
+                            biomeMapImage.setRGB(x, z, b.getColor() | 0x80_00_00_00);
 
-                            Color c = chunk.getBlockColor(new ChunkPos3D(x, h, z));
-                            if (c != null) {
-                                terrainMapImage.setRGB(x, z, c.getRGB());
-                            } else {
-                                terrainMapImage.setRGB(x, z, 0);
-                            }
+                            terrainMapImage.setRGB(x, z, chunk.getBlockColor(new ChunkPos3D(x, h, z)) | 0xFF_00_00_00);
                         }
                     }
                 } catch (Exception e) {

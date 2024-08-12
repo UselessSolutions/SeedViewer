@@ -11,7 +11,7 @@ public interface Chunk {
     int CHUNK_SIZE_Y = net.minecraft.core.world.chunk.Chunk.CHUNK_SECTIONS * ChunkSection.SECTION_SIZE_Y;
     int CHUNK_SIZE_Z = net.minecraft.core.world.chunk.Chunk.CHUNK_SIZE_Z;
     Biome getBiome(ChunkPos3D pos);
-    Color getBlockColor(ChunkPos3D pos);
+    int getBlockColor(ChunkPos3D pos);
     int getHeight(ChunkPos2D pos);
     int getWaterDepth(ChunkPos2D pos);
 }
