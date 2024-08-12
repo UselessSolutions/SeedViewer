@@ -124,7 +124,7 @@ public class Viewport extends JLabel {
     public void onResize(Rectangle newShape) {
         this.setBounds(newShape.x, newShape.y, newShape.width, newShape.height);
     }
-
+    private int tickCount = 0;
     public synchronized void tick() {
         Rectangle viewportBounds = getViewportBounds();
         Rectangle unloadBounds = new Rectangle(viewportBounds.x - VIEWPORT_UNLOAD_OVERSCAN, viewportBounds.y - VIEWPORT_UNLOAD_OVERSCAN, viewportBounds.width + VIEWPORT_UNLOAD_OVERSCAN * 2, viewportBounds.height + VIEWPORT_UNLOAD_OVERSCAN * 2);
@@ -158,11 +158,14 @@ public class Viewport extends JLabel {
         }
         repaint();
 
-        long total = 0;
-        for (long l : TIME_BUFFER) {
-            total += l;
+        if (tickCount % 5 * SeedViewer.TICKS_PER_SECOND == 0) {
+            long total = 0;
+            for (long l : TIME_BUFFER) {
+                total += l;
+            }
+            Global.LOGGER.info("Render average {}HZ", 1D/(((double) total/TIME_BUFFER.length)/1_000_000_000));
         }
-        Global.LOGGER.info("Render average {}HZ", 1D/(((double) total/TIME_BUFFER.length)/1_000_000_000));
+        tickCount++;
     }
 
     public synchronized void addMissingViewers(Rectangle viewportBounds) {
@@ -305,88 +308,90 @@ public class Viewport extends JLabel {
     public void paintToGraphics(Graphics g) {
         synchronized (this) {
             long start = System.nanoTime();
-            Rectangle viewportBounds = getViewportBounds();
-            long seed = world.get() == null ? this.seed.get() : world.get().getSeed();
-            for (ChunkView view : chunkViewMap.values()) {
-                if (!viewportBounds.intersects(view.getWorldBounds())) continue;
-                int blockX = view.getLocation().x * Chunk.CHUNK_SIZE_X;
-                int blockZ = view.getLocation().z * Chunk.CHUNK_SIZE_Z;
+            {
+                Rectangle viewportBounds = getViewportBounds();
+                long seed = world.get() == null ? this.seed.get() : world.get().getSeed();
+                for (ChunkView view : chunkViewMap.values()) {
+                    if (!viewportBounds.intersects(view.getWorldBounds())) continue;
+                    int blockX = view.getLocation().x * Chunk.CHUNK_SIZE_X;
+                    int blockZ = view.getLocation().z * Chunk.CHUNK_SIZE_Z;
 
-                int subImgX = (int) Math.floor((blockX - viewX.get()) * zoom.get() + getWidth()/2d);
-                int subImgZ = (int) Math.floor((blockZ + viewZ.get()) * zoom.get() + getHeight()/2d);
-                int subImgWidth = (int) Math.floor(Chunk.CHUNK_SIZE_X * zoom.get());
-                int subImgHeight = (int) Math.floor(Chunk.CHUNK_SIZE_Z * zoom.get());
-                if (showTerrain.get() && world.get() != null) {
-                    g.drawImage(view.getTerrainMapImage(),
-                        subImgX,
-                        subImgZ,
-                        subImgWidth,
-                        subImgHeight,
-                        null,
-                        null);
-                }
-                if (showBiomes.get()) {
-                    g.drawImage(view.getBiomeMapImage(),
-                        subImgX,
-                        subImgZ,
-                        subImgWidth,
-                        subImgHeight,
-                        null,
-                        null);
-                }
-                if (showSlimeChunks.get() && SeedViewer.isSlimeChunk(seed, view.getLocation())) {
-                    Graphics gSlime = g.create();
-                    if (slimeVignette == null) {
-                        gSlime.setColor(new Color(64, 255, 120, 128));
-                        gSlime.fillRect(
-                            subImgX,
-                            subImgZ,
-                            subImgWidth,
-                            subImgHeight);
-                    } else {
-                        gSlime.drawImage(slimeVignette,
+                    int subImgX = (int) Math.floor((blockX - viewX.get()) * zoom.get() + getWidth() / 2d);
+                    int subImgZ = (int) Math.floor((blockZ + viewZ.get()) * zoom.get() + getHeight() / 2d);
+                    int subImgWidth = (int) Math.floor(Chunk.CHUNK_SIZE_X * zoom.get());
+                    int subImgHeight = (int) Math.floor(Chunk.CHUNK_SIZE_Z * zoom.get());
+                    if (showTerrain.get() && world.get() != null) {
+                        g.drawImage(view.getTerrainMapImage(),
                             subImgX,
                             subImgZ,
                             subImgWidth,
                             subImgHeight,
-                            null, null);
+                            null,
+                            null);
                     }
-                    gSlime.dispose();
+                    if (showBiomes.get()) {
+                        g.drawImage(view.getBiomeMapImage(),
+                            subImgX,
+                            subImgZ,
+                            subImgWidth,
+                            subImgHeight,
+                            null,
+                            null);
+                    }
+                    if (showSlimeChunks.get() && SeedViewer.isSlimeChunk(seed, view.getLocation())) {
+                        Graphics gSlime = g.create();
+                        if (slimeVignette == null) {
+                            gSlime.setColor(new Color(64, 255, 120, 128));
+                            gSlime.fillRect(
+                                subImgX,
+                                subImgZ,
+                                subImgWidth,
+                                subImgHeight);
+                        } else {
+                            gSlime.drawImage(slimeVignette,
+                                subImgX,
+                                subImgZ,
+                                subImgWidth,
+                                subImgHeight,
+                                null, null);
+                        }
+                        gSlime.dispose();
+                    }
                 }
-            }
-            if (showChunkBorders.get()) {
-                int leftChunk = viewportBounds.x / Chunk.CHUNK_SIZE_X;
-                int widthChunks = viewportBounds.width / Chunk.CHUNK_SIZE_X;
-                int topChunk = viewportBounds.y / Chunk.CHUNK_SIZE_Z;
-                int heightChunks = viewportBounds.height / Chunk.CHUNK_SIZE_Z;
+                if (showChunkBorders.get()) {
+                    int leftChunk = viewportBounds.x / Chunk.CHUNK_SIZE_X;
+                    int widthChunks = viewportBounds.width / Chunk.CHUNK_SIZE_X;
+                    int topChunk = viewportBounds.y / Chunk.CHUNK_SIZE_Z;
+                    int heightChunks = viewportBounds.height / Chunk.CHUNK_SIZE_Z;
 
-                Graphics gBorders = g.create();
-                gBorders.setColor(new Color(0, 0, 0, 64));
-                for (int _x = leftChunk; _x <= leftChunk + widthChunks; _x++) {
-                    float blockX = (_x * Chunk.CHUNK_SIZE_X);
-                    int subImgX = (int) Math.floor((blockX - viewX.get()) * zoom.get() + getWidth()/2d);
+                    Graphics gBorders = g.create();
+                    gBorders.setColor(new Color(0, 0, 0, 64));
+                    for (int _x = leftChunk; _x <= leftChunk + widthChunks; _x++) {
+                        float blockX = (_x * Chunk.CHUNK_SIZE_X);
+                        int subImgX = (int) Math.floor((blockX - viewX.get()) * zoom.get() + getWidth() / 2d);
 
-                    gBorders.drawLine(subImgX, 0, subImgX, getHeight());
+                        gBorders.drawLine(subImgX, 0, subImgX, getHeight());
+                    }
+                    for (int _z = topChunk; _z < topChunk + heightChunks; _z++) {
+                        float blockZ = (_z * Chunk.CHUNK_SIZE_Z);
+                        int subImgZ = (int) Math.floor((blockZ + viewZ.get()) * zoom.get() + getHeight() / 2d);
+
+                        gBorders.drawLine(0, subImgZ, getWidth(), subImgZ);
+                    }
+                    gBorders.dispose();
                 }
-                for (int _z = topChunk; _z < topChunk + heightChunks; _z++) {
-                    float blockZ = (_z * Chunk.CHUNK_SIZE_Z);
-                    int subImgZ = (int) Math.floor((blockZ + viewZ.get()) * zoom.get() + getHeight()/2d);
-
-                    gBorders.drawLine(0, subImgZ, getWidth(), subImgZ);
+                if (showCrosshair.get()) {
+                    Graphics gCrosshair = g.create();
+                    int centX = getWidth() / 2;
+                    int centZ = getHeight() / 2;
+                    int lineReach = 10;
+                    int lineWidth = 2;
+                    gCrosshair.setColor(Color.BLACK);
+                    gCrosshair.setXORMode(Color.WHITE);
+                    gCrosshair.fillRect(centX - lineReach, centZ - lineWidth / 2, lineReach * 2, lineWidth);
+                    gCrosshair.fillRect(centX - lineWidth / 2, centZ - lineReach, lineWidth, lineReach * 2);
+                    gCrosshair.dispose();
                 }
-                gBorders.dispose();
-            }
-            if (showCrosshair.get()) {
-                Graphics gCrosshair = g.create();
-                int centX = getWidth()/2;
-                int centZ = getHeight()/2;
-                int lineReach = 10;
-                int lineWidth = 2;
-                gCrosshair.setColor(Color.BLACK);
-                gCrosshair.setXORMode(Color.WHITE);
-                gCrosshair.fillRect(centX - lineReach, centZ - lineWidth/2, lineReach * 2, lineWidth);
-                gCrosshair.fillRect(centX - lineWidth/2, centZ - lineReach, lineWidth, lineReach * 2);
-                gCrosshair.dispose();
             }
             TIME_BUFFER[renderPointer++ & (TIME_BUFFER_SIZE-1)] = System.nanoTime() - start;
         }
