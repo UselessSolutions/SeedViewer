@@ -95,6 +95,7 @@ public class ChunkView {
     }
 
     public void process(ChunkView posZ) {
+        if (hasProcessed()) return;
         synchronized (this) {
             processTask = PostProcessorService.submit(() -> {
                 try {

@@ -46,6 +46,7 @@ public class Viewport extends JLabel {
     public static final float ZOOM_MAX = 16f;
 
     private final Map<ChunkLocation, ChunkView> chunkViewMap = new HashMap<>();
+    private final Set<ChunkView> chunksPendingPostProcess = new HashSet<>();
     private final BufferedImage slimeVignette;
 
     public ChunkProvider chunkProvider = new TestChunkProvider();
@@ -140,15 +141,18 @@ public class Viewport extends JLabel {
 
         addMissingViewers(viewportBounds);
 
-        if (showTerrain.get()) {
-            for (ChunkView view : chunkViewMap.values()) {
+        if (showTerrain.get() && world.get() != null) {
+            List<ChunkView> unpendedChunks = new ArrayList<>();
+            for (ChunkView view : chunksPendingPostProcess) {
                 if (!view.hasInit()) continue;
                 if (view.hasProcessed()) continue;
                 ChunkLocation up = new ChunkLocation(view.getLocation().x, view.getLocation().z - 1);
                 if (chunkViewMap.containsKey(up) && chunkViewMap.get(up).hasInit()) {
                     view.process(chunkViewMap.get(up));
+                    unpendedChunks.add(view);
                 }
             }
+            unpendedChunks.forEach(chunksPendingPostProcess::remove);
         }
 
         repaint();
@@ -248,17 +252,23 @@ public class Viewport extends JLabel {
     }
 
     public synchronized void addChunkView(ChunkLocation location) {
-        chunkViewMap.put(location, new ChunkView(location, chunkProvider));
+        ChunkView view = new ChunkView(location, chunkProvider);
+        chunkViewMap.put(location, view);
+        chunksPendingPostProcess.add(view);
     }
 
     public synchronized void removeChunkView(ChunkLocation location) {
         ChunkView view = chunkViewMap.remove(location);
-        if (view != null) view.kill();
+        if (view != null) {
+            view.kill();
+            chunksPendingPostProcess.remove(view);
+        }
     }
 
     public synchronized void clearChunkViews() {
         chunkViewMap.forEach((l, c) -> c.kill());
         chunkViewMap.clear();
+        chunksPendingPostProcess.clear();
     }
 
     private ChunkLocation lastHoveredLocation = null;
@@ -295,7 +305,7 @@ public class Viewport extends JLabel {
                 int subImgZ = (int) Math.floor((blockZ + viewZ.get()) * zoom.get() + getHeight()/2d);
                 int subImgWidth = (int) Math.floor(Chunk.CHUNK_SIZE_X * zoom.get());
                 int subImgHeight = (int) Math.floor(Chunk.CHUNK_SIZE_Z * zoom.get());
-                if (showTerrain.get()) {
+                if (showTerrain.get() && world.get() != null) {
                     g.drawImage(view.getTerrainMapImage(),
                         subImgX,
                         subImgZ,
@@ -340,7 +350,7 @@ public class Viewport extends JLabel {
                 int heightChunks = viewportBounds.height / Chunk.CHUNK_SIZE_Z;
 
                 Graphics gBorders = g.create();
-                gBorders.setColor(Color.BLACK);
+                gBorders.setColor(new Color(0, 0, 0, 64));
                 for (int _x = leftChunk; _x <= leftChunk + widthChunks; _x++) {
                     float blockX = (_x * Chunk.CHUNK_SIZE_X);
                     int subImgX = (int) Math.floor((blockX - viewX.get()) * zoom.get() + getWidth()/2d);
