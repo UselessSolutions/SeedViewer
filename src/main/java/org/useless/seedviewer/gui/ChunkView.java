@@ -1,5 +1,6 @@
 package org.useless.seedviewer.gui;
 
+import org.useless.seedviewer.Global;
 import org.useless.seedviewer.collections.ChunkLocation;
 import org.useless.seedviewer.collections.ChunkPos2D;
 import org.useless.seedviewer.collections.ChunkPos3D;
@@ -20,6 +21,7 @@ public class ChunkView {
     private final BufferedImage biomeMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X * RESOLUTION_SCALE, Chunk.CHUNK_SIZE_Z * RESOLUTION_SCALE, BufferedImage.TYPE_INT_ARGB);
     private final BufferedImage terrainMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X * RESOLUTION_SCALE, Chunk.CHUNK_SIZE_Z * RESOLUTION_SCALE, BufferedImage.TYPE_INT_ARGB);
     private final BufferedImage heightMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X * RESOLUTION_SCALE, Chunk.CHUNK_SIZE_Z * RESOLUTION_SCALE, BufferedImage.TYPE_BYTE_GRAY);
+    private final BufferedImage waterDepthMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X * RESOLUTION_SCALE, Chunk.CHUNK_SIZE_Z * RESOLUTION_SCALE, BufferedImage.TYPE_BYTE_GRAY);
     private final ChunkLocation location;
     private final ChunkProvider provider;
 
@@ -43,6 +45,7 @@ public class ChunkView {
                     Graphics terrain = terrainMapImage.getGraphics();
                     Graphics biome = biomeMapImage.getGraphics();
                     Graphics height = heightMapImage.getGraphics();
+                    Graphics depth = waterDepthMapImage.getGraphics();
                     terrain.setColor(new Color(1, 1, 1, 0));
                     terrain.fillRect(0, 0, Chunk.CHUNK_SIZE_X, Chunk.CHUNK_SIZE_Z);
                     biome.setColor(new Color(1, 1, 1, 0));
@@ -53,6 +56,10 @@ public class ChunkView {
                             int h = chunk.getHeight(pos2D) - 1;
                             height.setColor(new Color(h, h, h));
                             height.fillRect(x * RESOLUTION_SCALE, z * RESOLUTION_SCALE, RESOLUTION_SCALE, RESOLUTION_SCALE);
+
+                            int wd = chunk.getWaterDepth(pos2D);
+                            depth.setColor(new Color(wd, wd, wd));
+                            depth.fillRect(x * RESOLUTION_SCALE, z * RESOLUTION_SCALE, RESOLUTION_SCALE, RESOLUTION_SCALE);
 
                             Biome b = chunk.getBiome(new ChunkPos3D(x, h, z));
                             Color biomeColor = new Color(b.getColor());
@@ -68,6 +75,7 @@ public class ChunkView {
                     terrain.dispose();
                     biome.dispose();
                     height.dispose();
+                    depth.dispose();
                 } finally {
                     hasInitialized = true;
                 }
@@ -89,28 +97,52 @@ public class ChunkView {
                 try {
                     for (int x = 0; x < Chunk.CHUNK_SIZE_X; x++) {
                         for (int z = 0; z < Chunk.CHUNK_SIZE_Z; z++) {
-                            int lastHeight;
-                            if (z == 0) {
-                                lastHeight = posZ.getHeightMapImage().getRGB(x, z + 15);
+                            int depth = waterDepthMapImage.getRGB(x, z) >> 8 & 0xFF;
+
+                            int brightness;
+                            if (depth == 0) {
+                                int lastHeight;
+                                if (z == 0) {
+                                    lastHeight = posZ.getHeightMapImage().getRGB(x, z + 15) & 0xFF;
+                                } else {
+                                    lastHeight = heightMapImage.getRGB(x, z - 1) & 0xFF;
+                                }
+                                int height = heightMapImage.getRGB(x, z) & 0xFF;
+
+                                if (height == lastHeight) {
+                                    brightness = 1;
+                                } else if (height < lastHeight) {
+                                    brightness = 0;
+                                } else {
+                                    brightness = 2;
+                                }
                             } else {
-                                lastHeight = heightMapImage.getRGB(x, z - 1);
+                                double d3 = (double) depth * 0.02D + (double) ((x + z) & 0b1) * 0.2D;
+                                if(d3 < 0.5D) {
+                                    brightness = 2;
+                                } else if (d3 > 0.9D) {
+                                    brightness = 0;
+                                } else {
+                                    brightness = 1;
+                                }
                             }
-                            int height = heightMapImage.getRGB(x, z);
-                            if (height == lastHeight) {
-                                int current = terrainMapImage.getRGB(x, z);
-                                int shade = 220;
-                                int a = (((current >> 24) & 0xFF) * shade) / 0xFF;
-                                int r = (((current >> 16) & 0xFF) * shade) / 0xFF;
-                                int g = (((current >>  8) & 0xFF) * shade) / 0xFF;
-                                int b = (((current      ) & 0xFF) * shade) / 0xFF;
+
+
+                            if (brightness == 1) {
+                                final int current = terrainMapImage.getRGB(x, z) ;
+                                final int shade = 220;
+                                final int a = (((current >> 24) & 0xFF) * shade) / 0xFF;
+                                final int r = (((current >> 16) & 0xFF) * shade) / 0xFF;
+                                final int g = (((current >>  8) & 0xFF) * shade) / 0xFF;
+                                final int b = (((current      ) & 0xFF) * shade) / 0xFF;
                                 terrainMapImage.setRGB(x, z, (a << 24 | r << 16 | g << 8 | b));
-                            } else if (height < lastHeight) {
-                                int current = terrainMapImage.getRGB(x, z);
-                                int shade = 180;
-                                int a = (((current >> 24) & 0xFF) * shade) / 0xFF;
-                                int r = (((current >> 16) & 0xFF) * shade) / 0xFF;
-                                int g = (((current >>  8) & 0xFF) * shade) / 0xFF;
-                                int b = (((current      ) & 0xFF) * shade) / 0xFF;
+                            } else if (brightness == 0) {
+                                final int current = terrainMapImage.getRGB(x, z);
+                                final int shade = 180;
+                                final int a = (((current >> 24) & 0xFF) * shade) / 0xFF;
+                                final int r = (((current >> 16) & 0xFF) * shade) / 0xFF;
+                                final int g = (((current >>  8) & 0xFF) * shade) / 0xFF;
+                                final int b = (((current      ) & 0xFF) * shade) / 0xFF;
                                 terrainMapImage.setRGB(x, z, (a << 24 | r << 16 | g << 8 | b));
                             }
                         }
