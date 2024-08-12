@@ -158,11 +158,11 @@ public class Viewport extends JLabel {
         }
         repaint();
 
-        long total = 0;
-        for (long l : TIME_BUFFER) {
-            total += l;
-        }
-        Global.LOGGER.info("Render average {}HZ", 1D/(((double) total/TIME_BUFFER.length)/1_000_000_000));
+//        long total = 0;
+//        for (long l : TIME_BUFFER) {
+//            total += l;
+//        }
+//        Global.LOGGER.info("Render average {}HZ", 1D/(((double) total/TIME_BUFFER.length)/1_000_000_000));
     }
 
     public synchronized void addMissingViewers(Rectangle viewportBounds) {
@@ -299,12 +299,12 @@ public class Viewport extends JLabel {
         super.paintComponent(g);
         paintToGraphics(g);
     }
-    private static final int TIME_BUFFER_SIZE = 32;
-    private static final long[] TIME_BUFFER = new long[TIME_BUFFER_SIZE];
-    private static int renderPointer = 0;
+//    private static final int TIME_BUFFER_SIZE = 32;
+//    private static final long[] TIME_BUFFER = new long[TIME_BUFFER_SIZE];
+//    private static int renderPointer = 0;
     public void paintToGraphics(Graphics g) {
         synchronized (this) {
-            long start = System.nanoTime();
+//            long start = System.nanoTime();
             Rectangle viewportBounds = getViewportBounds();
             long seed = world.get() == null ? this.seed.get() : world.get().getSeed();
             for (ChunkView view : chunkViewMap.values()) {
@@ -388,7 +388,7 @@ public class Viewport extends JLabel {
                 gCrosshair.fillRect(centX - lineWidth/2, centZ - lineReach, lineWidth, lineReach * 2);
                 gCrosshair.dispose();
             }
-            TIME_BUFFER[renderPointer++ & (TIME_BUFFER_SIZE-1)] = System.nanoTime() - start;
+//            TIME_BUFFER[renderPointer++ & (TIME_BUFFER_SIZE-1)] = System.nanoTime() - start;
         }
     }
 }
