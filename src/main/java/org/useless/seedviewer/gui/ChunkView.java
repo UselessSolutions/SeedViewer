@@ -17,11 +17,10 @@ public class ChunkView {
     private static final ExecutorService InitializerService = Executors.newFixedThreadPool(10);
     private static final ExecutorService PostProcessorService = Executors.newFixedThreadPool(10);
 
-    private final int RESOLUTION_SCALE = 1;
-    private final BufferedImage biomeMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X * RESOLUTION_SCALE, Chunk.CHUNK_SIZE_Z * RESOLUTION_SCALE, BufferedImage.TYPE_INT_ARGB);
-    private final BufferedImage terrainMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X * RESOLUTION_SCALE, Chunk.CHUNK_SIZE_Z * RESOLUTION_SCALE, BufferedImage.TYPE_INT_ARGB);
-    private final BufferedImage heightMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X * RESOLUTION_SCALE, Chunk.CHUNK_SIZE_Z * RESOLUTION_SCALE, BufferedImage.TYPE_INT_ARGB);
-    private final BufferedImage waterDepthMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X * RESOLUTION_SCALE, Chunk.CHUNK_SIZE_Z * RESOLUTION_SCALE, BufferedImage.TYPE_INT_ARGB);
+    private final BufferedImage biomeMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X, Chunk.CHUNK_SIZE_Z, BufferedImage.TYPE_INT_ARGB);
+    private final BufferedImage terrainMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X, Chunk.CHUNK_SIZE_Z, BufferedImage.TYPE_INT_ARGB);
+    private final BufferedImage heightMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X, Chunk.CHUNK_SIZE_Z, BufferedImage.TYPE_INT_ARGB);
+    private final BufferedImage waterDepthMapImage = new BufferedImage(Chunk.CHUNK_SIZE_X, Chunk.CHUNK_SIZE_Z, BufferedImage.TYPE_INT_ARGB);
 
     private final Rectangle bounds;
     private final ChunkLocation location;
